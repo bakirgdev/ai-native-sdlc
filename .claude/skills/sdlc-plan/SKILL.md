@@ -1,11 +1,11 @@
 ---
 name: sdlc-plan
-description: Third SDLC phase. Turns an accepted spec.md into an implementation plan (files, ordered steps citing requirements, a proof for every requirement, risks and rollback) and commits it as plan.md; code edits stay blocked until plan.md is accepted. Use after /sdlc-design.
+description: Third SDLC phase. Turns an accepted spec.md into an implementation plan (files, ordered steps citing requirements, a proof for every requirement, risks and rollback) and commits it as plan.md; code edits stay blocked until plan.md is accepted. Use after /sdlc-spec.
 argument-hint: "<slug>"
 disable-model-invocation: true
 allowed-tools:
-  - Bash(.claude/sdlc/status.sh)
-  - Bash(.claude/sdlc/status.sh *)
+  - Bash(.claude/sdlc-scripts/status.sh)
+  - Bash(.claude/sdlc-scripts/status.sh *)
 ---
 
 # Plan
@@ -14,11 +14,11 @@ No code is written until someone could build the change from plan.md alone.
 
 ## Task state
 
-!`.claude/sdlc/status.sh $ARGUMENTS`
+!`.claude/sdlc-scripts/status.sh $ARGUMENTS`
 
 ## Steps
 
-1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. spec.md must be `accepted`. If the task has an accepted intent.md but no spec.md, say the design phase was skipped and ask whether to continue.
+1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. spec.md must be `accepted`. If the task has an accepted intent.md but no spec.md, say the spec phase was skipped and ask whether to continue.
 2. Read intent.md, spec.md, CLAUDE.md and the code. Use `Explore` subagents (or `feature-dev:code-architect` when installed) for wide reads. Check every library or API detail with context7.
 3. Draft the plan:
    - the files that change, with new ones marked;

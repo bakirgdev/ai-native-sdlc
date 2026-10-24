@@ -4,8 +4,8 @@ description: Sixth SDLC phase. Ships a tested task. Pushes the branch, opens a p
 argument-hint: "<slug>"
 disable-model-invocation: true
 allowed-tools:
-  - Bash(.claude/sdlc/status.sh)
-  - Bash(.claude/sdlc/status.sh *)
+  - Bash(.claude/sdlc-scripts/status.sh)
+  - Bash(.claude/sdlc-scripts/status.sh *)
 ---
 
 # Deploy
@@ -14,7 +14,7 @@ The agent takes the change up to the merge gate. Who passes that gate depends on
 
 ## Task state
 
-!`.claude/sdlc/status.sh $ARGUMENTS`
+!`.claude/sdlc-scripts/status.sh $ARGUMENTS`
 
 ## Steps
 
@@ -28,7 +28,7 @@ The agent takes the change up to the merge gate. Who passes that gate depends on
    - `pr: ask`: ask first.
    - `strict` mode: the code owner approves and merges.
    Never bypass branch protection or required reviews.
-7. After the merge, watch the release pipeline if the merge triggers one, and report its result. If the changed service has no control bands yet, suggest `/sdlc-setup bands`. Ask before deleting the branch. Report the task complete and show `.claude/sdlc/status.sh <slug>`.
+7. After the merge, watch the release pipeline if the merge triggers one, and report its result. If the changed service has no control bands yet, suggest `/sdlc-setup bands`. Ask before deleting the branch. Report the task complete and show `.claude/sdlc-scripts/status.sh <slug>`.
 
 ## deploy.md
 

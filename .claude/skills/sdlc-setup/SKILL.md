@@ -48,7 +48,7 @@ Rules for every play:
    Keep model invocation on, so it loads by itself. `skill-creator` helps when installed.
 3. Test that it triggers: ask for the relevant task several ways, each in a fresh subagent, and confirm the skill loads every time.
 4. A skill is advisory. If the rule must always hold, back it with `guardrail` and the same check in CI.
-5. When the policy changes, the skill changes with the owner's sign-off. `/sdlc-design` records the skill versions in force.
+5. When the policy changes, the skill changes with the owner's sign-off. `/sdlc-spec` records the skill versions in force.
 
 ## guardrail: build-time hooks
 

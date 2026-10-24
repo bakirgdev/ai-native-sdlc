@@ -1,20 +1,20 @@
 ---
-name: sdlc-design
+name: sdlc-spec
 description: Second SDLC phase. Turns an accepted intent.md into spec.md with numbered, testable requirements, a design, a mapping for every constraint, and flagged policy conflicts, applying the project's policy skills. Use after /sdlc-intent.
 argument-hint: "<slug>"
 disable-model-invocation: true
 allowed-tools:
-  - Bash(.claude/sdlc/status.sh)
-  - Bash(.claude/sdlc/status.sh *)
+  - Bash(.claude/sdlc-scripts/status.sh)
+  - Bash(.claude/sdlc-scripts/status.sh *)
 ---
 
-# Design
+# Spec
 
 Requirements and design are written in one pass, with the project's policies applied while the spec is written rather than discovered in review.
 
 ## Task state
 
-!`.claude/sdlc/status.sh $ARGUMENTS`
+!`.claude/sdlc-scripts/status.sh $ARGUMENTS`
 
 ## Steps
 
@@ -36,7 +36,7 @@ Requirements and design are written in one pass, with the project's policies app
 ```markdown
 ---
 slug: <slug>
-phase: design
+phase: spec
 status: draft
 approved_by:
 approved_at:

@@ -4,8 +4,8 @@ description: Fifth SDLC phase. Verifies a built task independently in a fresh co
 argument-hint: "<slug>"
 disable-model-invocation: true
 allowed-tools:
-  - Bash(.claude/sdlc/status.sh)
-  - Bash(.claude/sdlc/status.sh *)
+  - Bash(.claude/sdlc-scripts/status.sh)
+  - Bash(.claude/sdlc-scripts/status.sh *)
 ---
 
 # Test
@@ -14,7 +14,7 @@ The work is checked by a context that did not write it, and every claim ends up 
 
 ## Task state
 
-!`.claude/sdlc/status.sh $ARGUMENTS`
+!`.claude/sdlc-scripts/status.sh $ARGUMENTS`
 
 ## Steps
 

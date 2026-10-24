@@ -4,8 +4,8 @@
 # $SDLC_VERIFY. Commits while only sdlc/ (the phase artifacts) is changed pass, and
 # so do commits that change only test files, which may hold a deliberately failing
 # test (test-first fixes).
-# shellcheck source=../sdlc/lib.sh
-. "$(dirname "$0")/../sdlc/lib.sh"
+# shellcheck source=../sdlc-scripts/lib.sh
+. "$(dirname "$0")/../sdlc-scripts/lib.sh"
 
 input=$(cat)
 # git and $SDLC_VERIFY only ever run in this project's root. Which repository a

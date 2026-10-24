@@ -15,7 +15,7 @@ here=$(cd "$(dirname "$0")" && pwd -P)
 defaults() {
   case $1 in
     intent) echo "opus high acceptEdits" ;;
-    design) echo "opus xhigh acceptEdits" ;;
+    spec) echo "opus xhigh acceptEdits" ;;
     plan) echo "opus xhigh plan" ;;
     build) echo "sonnet high auto" ;;
     test) echo "sonnet high auto" ;;
@@ -36,7 +36,7 @@ if [ "${1:-}" = --defaults ]; then
     printf '%-9s %-7s %-7s %s\n' "$p" "$1" "$2" "$3"
   done
   echo "run_mode autonomous: every phase defaults to permission auto."
-  echo "gate_mode solo-auto: plan defaults to auto instead of plan mode."
+  echo "gate_mode auto: plan defaults to permission auto instead of plan mode."
   exit 0
 fi
 
@@ -88,7 +88,7 @@ if [ -z "$phase" ]; then
   if [ -n "$st" ]; then
     echo "sdlc/$slug/$art is '$st', so the $phase phase is not finished; it must be accepted before the next phase starts."
     echo "Reopen that phase's session: claude -r $(q "$slug-$phase")"
-    echo "Or start it again in a new session: .claude/sdlc/next.sh $slug --phase $phase"
+    echo "Or start it again in a new session: .claude/sdlc-scripts/next.sh $slug --phase $phase"
     exit 3
   fi
 fi
@@ -103,7 +103,7 @@ set -- $d
 d_model=$1 d_effort=$2 d_perm=$3
 if [ "$(tf run_mode)" = autonomous ]; then
   d_perm=auto
-elif [ "$phase" = plan ] && [ "$(tf gate_mode)" = solo-auto ]; then
+elif [ "$phase" = plan ] && [ "$(tf gate_mode)" = auto ]; then
   d_perm=auto
 fi
 

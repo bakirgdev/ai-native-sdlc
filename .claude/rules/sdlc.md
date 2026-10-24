@@ -5,7 +5,7 @@ This project runs changes through the AI-native SDLC skills. A task lives in `sd
 | Phase | Start with | Writes |
 |---|---|---|
 | intent | `/sdlc-intent <idea or ticket>` | `task.yaml`, `intent.md` |
-| design | `/sdlc-design <slug>` | `spec.md` |
+| spec | `/sdlc-spec <slug>` | `spec.md` |
 | plan | `/sdlc-plan <slug>` | `plan.md` |
 | build | `/sdlc-build <slug>` | code, tests, `build.md` |
 | test | `/sdlc-test <slug>` | tests, fixes, `test.md` |
@@ -26,14 +26,14 @@ This project runs changes through the AI-native SDLC skills. A task lives in `sd
 Before any approval, run the `sdlc-gatekeeper` agent on the phase and resolve what it reports.
 
 - `solo`: ask the user to approve, as a grilling question that includes the gatekeeper's verdict. Only after an explicit yes, set `status: accepted`, `approved_by: <git config user.name>` and `approved_at: <YYYY-MM-DD>`.
-- `solo-auto`: when the gatekeeper returns PASS, set `status: accepted` and `approved_by: sdlc-gatekeeper` yourself. Ask the user only about decisions that are theirs.
-- `strict`: never set `accepted` on your own. Commit the artifact as `draft`, tell the user who must accept it (intent and spec: the product owner; plan: the engineer, or a tech lead for higher-risk changes), and print `.claude/sdlc/next.sh <slug>` for them to run once it is accepted; skip the rest of "Ending a phase". For deploy, the code owner's approving review is the acceptance: when `gh pr view <n> --json reviewDecision` shows `APPROVED`, set deploy.md to `accepted` with `approved_by: <reviewer>`.
+- `auto`: when the gatekeeper returns PASS, set `status: accepted` and `approved_by: sdlc-gatekeeper` yourself. Ask the user only about decisions that are theirs.
+- `strict`: never set `accepted` on your own. Commit the artifact as `draft`, tell the user who must accept it (intent and spec: the product owner; plan: the engineer, or a tech lead for higher-risk changes), and print `.claude/sdlc-scripts/next.sh <slug>` for them to run once it is accepted; skip the rest of "Ending a phase". For deploy, the code owner's approving review is the acceptance: when `gh pr view <n> --json reviewDecision` shows `APPROVED`, set deploy.md to `accepted` with `approved_by: <reviewer>`.
 
 ## Ending a phase
 
 1. Commit the phase's files: `sdlc(<slug>): <phase> <accepted|draft>`.
-2. Weigh the next phase's model, effort and permission mode. The defaults are in `.claude/sdlc/next.sh --defaults`. Values the user set in task.yaml (`<phase>_model`, `<phase>_effort`, `<phase>_permission`) always win. If a default clearly does not fit this task (its size, risk or ambiguity), pass `--model`, `--effort` or `--permission` and give the reason in one line. Do not choose the `fable` model or `bypassPermissions` yourself; use them only when the user asks.
-3. Run `.claude/sdlc/next.sh <slug> [flags]`. With `run_mode: manual` it prints a command: show it to the user unchanged, to run in a new terminal. With `run_mode: autonomous` it starts the next phase as a background session: tell the user they can follow it with `claude agents` and `claude attach <slug>-<phase>`, then stop.
+2. Weigh the next phase's model, effort and permission mode. The defaults are in `.claude/sdlc-scripts/next.sh --defaults`. Values the user set in task.yaml (`<phase>_model`, `<phase>_effort`, `<phase>_permission`) always win. If a default clearly does not fit this task (its size, risk or ambiguity), pass `--model`, `--effort` or `--permission` and give the reason in one line. Do not choose the `fable` model or `bypassPermissions` yourself; use them only when the user asks.
+3. Run `.claude/sdlc-scripts/next.sh <slug> [flags]`. With `run_mode: manual` it prints a command: show it to the user unchanged, to run in a new terminal. With `run_mode: autonomous` it starts the next phase as a background session: tell the user they can follow it with `claude agents` and `claude attach <slug>-<phase>`, then stop.
 
 ## Context compaction
 

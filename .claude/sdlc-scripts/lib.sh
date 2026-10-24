@@ -1,7 +1,7 @@
 # Shared helpers for the AI-native SDLC scripts and hooks. POSIX sh; needs git.
 # Source it: . "<this dir>/lib.sh"
 
-SDLC_PHASES="intent design plan build test deploy"
+SDLC_PHASES="intent spec plan build test deploy"
 
 # Repository root of a directory (default: current directory).
 sdlc_root() {
@@ -21,7 +21,7 @@ sdlc_branch_slug() {
 sdlc_artifact() {
   case $1 in
     intent) echo intent.md ;;
-    design) echo spec.md ;;
+    spec) echo spec.md ;;
     plan) echo plan.md ;;
     build) echo build.md ;;
     test) echo test.md ;;

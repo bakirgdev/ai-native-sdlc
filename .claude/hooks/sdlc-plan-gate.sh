@@ -2,8 +2,8 @@
 # PreToolUse hook (Edit|Write|MultiEdit|NotebookEdit). On branch sdlc/<slug>, blocks
 # edits to repository files outside sdlc/ until sdlc/<slug>/plan.md is accepted.
 # Files outside the repository (for example plan-mode drafts in ~/.claude/plans) pass.
-# shellcheck source=../sdlc/lib.sh
-. "$(dirname "$0")/../sdlc/lib.sh"
+# shellcheck source=../sdlc-scripts/lib.sh
+. "$(dirname "$0")/../sdlc-scripts/lib.sh"
 
 input=$(cat)
 if ! command -v jq >/dev/null 2>&1; then

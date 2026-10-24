@@ -4,8 +4,8 @@ description: Fourth SDLC phase. Implements an accepted plan.md step by step with
 argument-hint: "<slug>"
 disable-model-invocation: true
 allowed-tools:
-  - Bash(.claude/sdlc/status.sh)
-  - Bash(.claude/sdlc/status.sh *)
+  - Bash(.claude/sdlc-scripts/status.sh)
+  - Bash(.claude/sdlc-scripts/status.sh *)
 ---
 
 # Build
@@ -14,7 +14,7 @@ Implement the accepted plan, checking every step against the project's own tests
 
 ## Task state
 
-!`.claude/sdlc/status.sh $ARGUMENTS`
+!`.claude/sdlc-scripts/status.sh $ARGUMENTS`
 
 ## Steps
 
@@ -28,7 +28,7 @@ Implement the accepted plan, checking every step against the project's own tests
 5. Commit in logical steps, following the repository's commit convention. The commit gate runs `$SDLC_VERIFY` on every code commit.
 6. Handle deviations:
    - Same requirements, different detail: record it under `## Changes` in plan.md and commit that with the code.
-   - A change of scope, requirements or design: stop and grill the user. Set plan.md (and spec.md if needed) back to `draft`, record why under `## Changes`, commit, and end the session with `.claude/sdlc/next.sh <slug> --phase plan` (or `--phase design`). Build resumes after the plan is accepted again.
+   - A change of scope, requirements or design: stop and grill the user. Set plan.md (and spec.md if needed) back to `draft`, record why under `## Changes`, commit, and end the session with `.claude/sdlc-scripts/next.sh <slug> --phase plan` (or `--phase spec`). Build resumes after the plan is accepted again.
 7. When every step is done and `code-simplifier` is installed, run it on the changed code, then verify again.
 8. Run `sdlc-verifier` once on the finished work, from a fresh context, and fix what it reports.
 9. Write `sdlc/<slug>/build.md` from the template, pasting the final verify output literally.

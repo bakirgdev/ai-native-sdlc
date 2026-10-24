@@ -1,8 +1,8 @@
 #!/bin/sh
 # PreToolUse hook used only by the sdlc-test-writer agent (agent frontmatter):
 # edits are allowed to test files only.
-# shellcheck source=../sdlc/lib.sh
-. "$(dirname "$0")/../sdlc/lib.sh"
+# shellcheck source=../sdlc-scripts/lib.sh
+. "$(dirname "$0")/../sdlc-scripts/lib.sh"
 
 input=$(cat)
 if ! command -v jq >/dev/null 2>&1; then

@@ -5,9 +5,9 @@
   },
   "permissions": {
     "allow": [
-      "Bash(.claude/sdlc/status.sh)",
-      "Bash(.claude/sdlc/status.sh *)",
-      "Bash(.claude/sdlc/next.sh --defaults)"
+      "Bash(.claude/sdlc-scripts/status.sh)",
+      "Bash(.claude/sdlc-scripts/status.sh *)",
+      "Bash(.claude/sdlc-scripts/next.sh --defaults)"
     ]
   },
   "enabledPlugins": {
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/sdlc/status.sh --context"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/sdlc-scripts/status.sh --context"
           }
         ]
       }

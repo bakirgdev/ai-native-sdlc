@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # Intent
 
-Capture the problem once, in the originator's own words, as `sdlc/<slug>/intent.md`. Turning it into requirements is the design phase's job.
+Capture the problem once, in the originator's own words, as `sdlc/<slug>/intent.md`. Turning it into requirements is the spec phase's job.
 
 Input: $ARGUMENTS
 
@@ -23,13 +23,13 @@ Input: $ARGUMENTS
    - **Slug**: propose a kebab-case slug of at most 40 characters from the title, plus two or three alternatives (shorter, more specific, or prefixed with the ticket ID such as `abc-123-<slug>`). The user may pick their own. It names `sdlc/<slug>/`, the branch `sdlc/<slug>` and the sessions `<slug>-<phase>`, for this task only. If the folder or branch already exists, propose another.
    - **Approval mode** (`gate_mode`), recommend `solo`:
      - `solo`: you approve each phase with a yes in chat, and Claude records it.
-     - `solo-auto`: an independent reviewer agent checks each phase and Claude approves when it passes; you are asked only about decisions that are yours.
+     - `auto`: an independent reviewer agent checks each phase and Claude approves when it passes; you are asked only about decisions that are yours.
      - `strict`: the playbook's roles. The named owner sets the status or merges the PR; Claude never approves.
    - **Run mode** (`run_mode`), recommend `manual`:
      - `manual`: each phase ends with a command you run in a new terminal.
      - `autonomous`: each phase starts the next one as a background session; you are pulled in only for questions and approvals (follow it with `claude agents`).
    - **Pull request** (`pr`), recommend `ask`: with `ask` Claude asks before pushing, opening and merging; with `auto` it does all three itself.
-   - **Models**: show the output of `.claude/sdlc/next.sh --defaults` and ask whether any phase of this task should use a different model, effort or permission mode.
+   - **Models**: show the output of `.claude/sdlc-scripts/next.sh --defaults` and ask whether any phase of this task should use a different model, effort or permission mode.
 4. Create and switch to branch `sdlc/<slug>` from the default branch (usually `main`). If you are on another `sdlc/*` branch, or the tree has uncommitted changes, ask the user to commit or stash them first: they would travel into the task, and the commit gate counts them.
 5. Write `sdlc/<slug>/task.yaml` and `sdlc/<slug>/intent.md` from the templates below. Keep the originator's wording. For a ticket, the originator corrects the draft before it is committed.
 6. Show the draft and apply every correction.
@@ -81,5 +81,5 @@ approved_at:
 ## Out of scope
 
 ## Open questions
-<Anything not yet known. Design answers each one or carries it forward.>
+<Anything not yet known. The spec phase answers each one or carries it forward.>
 ```

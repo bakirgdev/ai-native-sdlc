@@ -49,7 +49,7 @@ Process metrics work the same way. A drift in PR cycle time produces a report fo
 
 ## triage
 
-1. List the agent-written intents still in draft: run `.claude/sdlc/status.sh` and read each task's intent.md `author`.
+1. List the agent-written intents still in draft: run `.claude/sdlc-scripts/status.sh` and read each task's intent.md `author`.
 2. Present them in one grilling round, each with its evidence and your recommendation. Route product-facing findings to the product owner.
 3. The user decides. For each decision, switch to that task's branch (`git switch sdlc/<slug>`), record it in intent.md, and commit:
    - fix now: `accepted`
@@ -57,4 +57,4 @@ Process metrics work the same way. A drift in PR cycle time produces a report fo
    - dismiss: `dismissed`, with a `reason:` line
 
    Never decide yourself, whatever the gate mode. In `strict` mode the user's decision here stands in for the product owner's acceptance.
-4. For each accepted intent, end its intent phase as `.claude/rules/sdlc.md` says, so its next command is `/sdlc-design <slug>`. Dismissal reasons are input for tuning the bands.
+4. For each accepted intent, end its intent phase as `.claude/rules/sdlc.md` says, so its next command is `/sdlc-spec <slug>`. Dismissal reasons are input for tuning the bands.
