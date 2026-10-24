@@ -30,6 +30,29 @@ sdlc_artifact() {
   esac
 }
 
+# True when a path has ./ or ../ segments, which the hooks refuse.
+sdlc_unnormalized_path() {
+  case $1 in
+    . | .. | ./* | ../* | */. | */.. | */./* | */../*) return 0 ;;
+  esac
+  return 1
+}
+
+# Prints the path made absolute (relative to <base>) with its existing directory
+# part resolved through symlinks, the way git reports the repository root.
+# Usage: sdlc_resolve_path <path> <base>
+sdlc_resolve_path() {
+  _f=$1
+  case $_f in /*) ;; *) _f="$2/$_f" ;; esac
+  _d=${_f%/*}
+  while [ -n "$_d" ] && [ ! -d "$_d" ]; do _d=${_d%/*}; done
+  if [ -n "$_d" ]; then
+    printf '%s%s\n' "$(cd "$_d" && pwd -P)" "${_f#"$_d"}"
+  else
+    printf '%s\n' "$_f"
+  fi
+}
+
 # True when a path looks like a test file, by the directory and file names
 # common test frameworks use.
 sdlc_is_test_path() {

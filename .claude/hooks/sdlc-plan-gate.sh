@@ -19,16 +19,11 @@ dir=${cwd:-.}
 slug=$(sdlc_branch_slug "$dir") || exit 0
 root=$(sdlc_root "$dir") || exit 0
 
-case $file in /*) ;; *) file="$dir/$file" ;; esac
-case $file in
-  */../* | */./*)
-    echo "SDLC plan gate: use a normalized path without ./ or ../ segments ($file)." >&2
-    exit 2 ;;
-esac
-# Resolve symlinked directories (such as macOS /tmp) the way git reports $root.
-d=${file%/*}
-while [ -n "$d" ] && [ ! -d "$d" ]; do d=${d%/*}; done
-[ -n "$d" ] && file="$(cd "$d" && pwd -P)${file#"$d"}"
+if sdlc_unnormalized_path "$file"; then
+  echo "SDLC plan gate: use a normalized path without ./ or ../ segments ($file)." >&2
+  exit 2
+fi
+file=$(sdlc_resolve_path "$file" "$dir")
 case $file in
   "$root"/sdlc/*) exit 0 ;;
   "$root"/*) ;;

@@ -13,9 +13,22 @@ if command -v jq >/dev/null 2>&1; then
   cwd=$(printf '%s' "$input" | jq -r '.cwd // empty')
   # The hook's "if" filter also lets through commands it cannot parse, so check
   # for a git commit here (including "git -C dir commit" and "git -c k=v commit").
-  printf '%s' "$input" | jq -r '.tool_input.command // empty' |
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
+  printf '%s\n' "$cmd" |
     grep -Eq '(^|[^[:alnum:]_-])git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+commit([[:space:]]|$)' ||
     exit 0
+  # Judge the repository the commit targets: "git -C <dir>" or a leading "cd <dir> &&".
+  target=$(printf '%s\n' "$cmd" | sed -nE 's/.*git[[:space:]]+-C[[:space:]]+([^[:space:];&|]+).*/\1/p' | head -n 1)
+  [ -n "$target" ] ||
+    target=$(printf '%s\n' "$cmd" | sed -nE 's/^[[:space:]]*cd[[:space:]]+([^[:space:];&|]+)[[:space:]]*&&.*/\1/p' | head -n 1)
+  target=${target#[\"\']}
+  target=${target%[\"\']}
+  if [ -n "$target" ]; then
+    case $target in
+      /*) cwd=$target ;;
+      *) cwd="${cwd:-.}/$target" ;;
+    esac
+  fi
 fi
 dir=${cwd:-.}
 slug=$(sdlc_branch_slug "$dir") || exit 0
