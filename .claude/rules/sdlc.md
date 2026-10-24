@@ -11,7 +11,7 @@ This project runs changes through the AI-native SDLC skills. A task lives in `sd
 | test | `/sdlc-test <slug>` | tests, fixes, `test.md` |
 | deploy | `/sdlc-deploy <slug>` | pull request, `deploy.md` |
 
-`/sdlc-maintain` turns alerts, incidents and scan findings into new intents. `/sdlc-setup` holds one-time project setup. `/sdlc-status` shows every task. On a `sdlc/<slug>` branch, hooks block code edits until plan.md is accepted and block code commits until `$SDLC_VERIFY` passes.
+`/sdlc-maintain` turns alerts, incidents and scan findings into new intents. `/sdlc-setup` holds one-time project setup. `/sdlc-status` shows every task. On a `sdlc/<slug>` branch, hooks block code edits until plan.md is accepted and block code commits until the check command passes (`$SDLC_VERIFY`, or each repository's command in workspace mode).
 
 ## In every SDLC session
 
@@ -31,9 +31,19 @@ Before any approval, run the `sdlc-gatekeeper` agent on the phase and resolve wh
 
 ## Ending a phase
 
-1. Commit the phase's files: `sdlc(<slug>): <phase> <accepted|draft>`.
+1. Commit the phase's files: `sdlc(<slug>): <phase> <accepted|draft>`. In workspace mode, commit them only when this folder is a git repository and `git check-ignore -q sdlc/<slug>/task.yaml` says they are not ignored; otherwise they stay local and the user keeps them.
 2. Weigh the next phase's model, effort and permission mode. The defaults are in `.claude/sdlc-scripts/next.sh --defaults`. Values the user set in task.yaml (`<phase>_model`, `<phase>_effort`, `<phase>_permission`) always win. If a default clearly does not fit this task (its size, risk or ambiguity), pass `--model`, `--effort` or `--permission` and give the reason in one line. Do not choose the `fable` model or `bypassPermissions` yourself; use them only when the user asks.
 3. Run `.claude/sdlc-scripts/next.sh <slug> [flags]`. With `run_mode: manual` it prints a command: show it to the user unchanged, to run in a new terminal. With `run_mode: autonomous` it starts the next phase as a background session: tell the user they can follow it with `claude agents` and `claude attach <slug>-<phase>`, then stop.
+
+## Workspace mode
+
+When `.claude/sdlc-workspace.yaml` exists, this folder holds several git repositories (every folder directly inside it that contains `.git`), and one task can change several of them.
+
+- Always run from this folder. Every repository is already reachable from here, so no `--add-dir` is needed.
+- Task files stay in `sdlc/<slug>/` in this folder. `repos:` in task.yaml lists the repositories the task changes, and each of them gets its own `sdlc/<slug>` branch, created from its own default branch.
+- Run git per repository (`git -C <repo> ...`). Paths in the artifacts start with the repository folder, for example `api/src/app.ts`.
+- Each repository's own CLAUDE.md owns its toolchain, commands and release process; read it before changing that repository.
+- Each repository's check command is in `.claude/sdlc-workspace.yaml` as `<repo>: <command>`, run inside that repository. It replaces `$SDLC_VERIFY`.
 
 ## Context compaction
 

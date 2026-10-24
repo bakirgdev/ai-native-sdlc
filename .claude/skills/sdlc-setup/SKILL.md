@@ -1,7 +1,7 @@
 ---
 name: sdlc-setup
-description: One-time project setup for the AI-native SDLC. Plays are verify (the feedback loop and SDLC_VERIFY), claude-md, policy-skill, guardrail (build-time hooks), gates (approval hooks), evals (a regression suite for the agent's configuration), pipeline (CI/CD) and bands (control-band detection). Run each play once per project, from the default branch.
-argument-hint: "verify | claude-md | policy-skill <policy> | guardrail <rule> | gates | evals | pipeline | bands <metric>"
+description: One-time project setup for the AI-native SDLC. Plays are verify (the feedback loop and SDLC_VERIFY), workspace (several git repositories in one folder), claude-md, policy-skill, guardrail (build-time hooks), gates (approval hooks), evals (a regression suite for the agent's configuration), pipeline (CI/CD) and bands (control-band detection). Run each play once per project, from the default branch.
+argument-hint: "verify | workspace | claude-md | policy-skill <policy> | guardrail <rule> | gates | evals | pipeline | bands <metric>"
 disable-model-invocation: true
 ---
 
@@ -14,10 +14,10 @@ Choose the play from the first word.
 - Anything else: list the plays and ask.
 
 Rules for every play:
-- Run setup from the default branch, not from a `sdlc/<slug>` branch, where the plan gate would block it.
+- Run setup from the default branch (in workspace mode, from the workspace folder), not from a `sdlc/<slug>` branch, where the plan gate would block it.
 - Hooks and settings go in the project's `.claude/` only, never in `~/.claude`.
 - Ask before creating CI workflows, schedules, or anything that holds credentials.
-- When a play is done, commit its changes on the default branch (ask first), so SDLC tasks start from a clean tree.
+- When a play is done and the project is a git repository, commit its changes on the default branch (ask first), so SDLC tasks start from a clean tree.
 - Never handle secret values.
 
 ## verify: the feedback loop
@@ -30,6 +30,16 @@ Rules for every play:
    - "if a test fails, fix the code, not the test".
 4. Set `SDLC_VERIFY` to the combined command under `env` in `.claude/settings.json`. The commit gate runs it on every code commit of an SDLC task. Use `true` only for a project with nothing to check, and say what that gives up.
 5. Run the command once and paste the output. Tell the user to restart their Claude Code sessions so they pick up the new value.
+
+## workspace: several repositories in one folder
+
+Use it when this folder, whether a git repository or not, holds several git repositories and tasks span them. In workspace mode it replaces `verify`.
+
+1. List the repositories: every folder directly inside this one that contains `.git`.
+2. For each, find its check command as in `verify`, from its CLAUDE.md, Makefile, package.json or CI config. Grill the user on the whole list in one round.
+3. Write `.claude/sdlc-workspace.yaml` with one `<repo>: <command>` line per repository (`true` opts a repository out). This file switches workspace mode on; deleting it switches back to single-repo mode.
+4. Tell the user whether task files will be committed: only when this folder is a git repository and `sdlc/` is not git-ignored. Never create a git repository here and never change its `.gitignore` for this.
+5. Run the play again whenever repositories are added or removed: new ones get a check command, removed ones lose their line.
 
 ## claude-md
 

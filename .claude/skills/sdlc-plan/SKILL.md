@@ -25,7 +25,8 @@ No code is written until someone could build the change from plan.md alone.
    - the steps in order, each citing the R# it serves, and marked `parallel-safe` when no other step touches its files;
    - a proof for every R#: a test file, a command, or a Playwright check;
    - the risks, with a rollback for each;
-   - the alternatives you rejected, and why.
+   - the alternatives you rejected, and why;
+   - in workspace mode, paths that start with their repository folder, and a `## Merge order` section: the order in which the repositories merge and release, and why every state in between stays compatible.
 4. Interrogate the draft before showing it: what could it break, which step is riskiest, what is missing. Iterate until someone who never saw this conversation could implement it from the plan alone.
 5. Grill the user on the choices that are theirs.
 6. Run `sdlc-gatekeeper` on the draft (pass the plan text if plan.md is not written yet) and resolve its findings.
@@ -59,6 +60,9 @@ approved_at:
 
 ## Risks and rollback
 - <risk> (spec concern <n>). Rollback: <how>.
+
+## Merge order (workspace mode)
+1. <repo>: <why it goes first>
 
 ## Alternatives not taken
 - <option>: <why not>.

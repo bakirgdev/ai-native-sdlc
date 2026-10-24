@@ -60,9 +60,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-root=$(sdlc_root) || { echo "next.sh: not inside a git repository." >&2; exit 1; }
+if sdlc_workspace; then
+  root=$SDLC_PROJECT
+else
+  root=$(sdlc_root "$SDLC_PROJECT") || { echo "next.sh: not inside a git repository." >&2; exit 1; }
+fi
 if [ -z "$(sdlc_task_file "$root" "$slug" task.yaml)" ]; then
-  echo "next.sh: no task '$slug' (sdlc/$slug/task.yaml not found here or on branch sdlc/$slug)." >&2
+  echo "next.sh: no task '$slug' (sdlc/$slug/task.yaml not found)." >&2
   exit 1
 fi
 tf() { sdlc_task_field "$root" "$slug" task.yaml "$1"; }

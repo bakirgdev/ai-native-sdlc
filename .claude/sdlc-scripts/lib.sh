@@ -3,6 +3,24 @@
 
 SDLC_PHASES="intent spec plan build test deploy"
 
+# The project is the folder that holds .claude/. Every caller lives two levels
+# below it (.claude/hooks/ or .claude/sdlc-scripts/). Task files always live in
+# $SDLC_PROJECT/sdlc/<slug>/.
+SDLC_PROJECT=$(cd "$(dirname "$0")/../.." && pwd -P)
+SDLC_WORKSPACE_FILE="$SDLC_PROJECT/.claude/sdlc-workspace.yaml"
+
+# True in workspace mode: the project folder holds several git repositories.
+sdlc_workspace() {
+  [ -f "$SDLC_WORKSPACE_FILE" ]
+}
+
+# Workspace repositories: folders directly inside the project that contain .git.
+sdlc_repos() {
+  for _d in "$SDLC_PROJECT"/*/; do
+    [ -e "${_d}.git" ] && basename "$_d"
+  done
+}
+
 # Repository root of a directory (default: current directory).
 sdlc_root() {
   git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null
@@ -89,11 +107,14 @@ sdlc_field() {
   sdlc_field_in "$2" "$_md" < "$1"
 }
 
-# Prints sdlc/<slug>/<file>. Tasks other than the checked-out one are read from
-# their branch, because their files exist only there until merged.
+# Prints sdlc/<slug>/<file>. In workspace mode the files are read from the
+# project folder. In single-repo mode, tasks other than the checked-out one are
+# read from their branch, because their files exist only there until merged.
 # Usage: sdlc_task_file <root> <slug> <file>
 sdlc_task_file() {
-  if [ "$(sdlc_branch_slug "$1")" != "$2" ] &&
+  if sdlc_workspace; then
+    cat "$SDLC_PROJECT/sdlc/$2/$3" 2>/dev/null
+  elif [ "$(sdlc_branch_slug "$1")" != "$2" ] &&
     git -C "$1" rev-parse --verify --quiet "refs/heads/sdlc/$2" >/dev/null; then
     git -C "$1" show "sdlc/$2:sdlc/$2/$3" 2>/dev/null
   else

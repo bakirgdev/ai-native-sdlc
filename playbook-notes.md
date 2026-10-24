@@ -203,4 +203,5 @@ Measures:
 - Gate approval modes (solo, auto, strict). The playbook assumes distinct roles (product owner, tech lead, code owner); here one person often holds all of them, so the mode sets how much self-approval is allowed.
 - An opt-in autonomous run mode, a lighter relative of the playbook's auto mode and headless loop. It stays off unless asked for.
 - Questions to the user go through the `grilling` skill.
+- A workspace mode for changes that span several repositories: the task files live in a parent folder and each repository gets its own branch and PR. The playbook describes a single repository.
 - Code review is deferred: `/sdlc-deploy` covers the pipeline and release side, and the PR review loop is not implemented yet (see the README).

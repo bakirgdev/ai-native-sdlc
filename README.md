@@ -109,6 +109,23 @@ Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions
 
 `claude -r <slug>-<phase>` reopens an earlier phase's session. `--fork-session` branches it without changing the original. To redo a phase, set its artifact back to `draft`, then run `.claude/sdlc-scripts/next.sh <slug> --phase <phase>`. A change to an accepted artifact sends every later artifact back to `draft` too.
 
+### Workspace mode (several repositories)
+
+For tasks that change several repositories at once. Use it when one folder, a git repository or not, holds the repositories as subfolders:
+
+```text
+work/                 Claude starts here: .claude/ and sdlc/<slug>/ live in this folder
+  api/   (git repo)   branch sdlc/<slug> when the task changes it
+  web/   (git repo)   branch sdlc/<slug> when the task changes it
+```
+
+1. Copy `.claude/` into `work/` and run `claude "/sdlc-setup workspace"` there. It finds every folder with `.git` directly inside `work/`, asks for each repository's check command, and writes `.claude/sdlc-workspace.yaml`. That file switches the mode on; delete it to switch back. Run the play again when repositories are added or removed.
+2. Use the same commands as in a single repository. The intent phase asks which repositories the task changes (`repos:` in task.yaml) and creates `sdlc/<slug>` in each.
+3. The plan gives every path its repository and a merge order across repositories. Build can run one agent per repository in parallel (`sdlc-repo-implementer`), and deploy opens one PR per repository and merges them in that order.
+4. The task files are committed only when `work/` is itself a git repository and `sdlc/` is not git-ignored there. Otherwise they stay on your disk, and keeping them is up to you.
+
+Always start Claude in `work/`. The gates check every repository there: a code commit anywhere waits until the task's plan is accepted and that repository's check passes.
+
 ## What is in `.claude/`
 
 | Path | Purpose |
@@ -116,7 +133,8 @@ Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions
 | `skills/sdlc-*/SKILL.md` | The 9 commands. Phase skills are user-invoked only; `sdlc-status` can also be used by Claude. |
 | `agents/sdlc-gatekeeper.md` | Read-only, opus. Checks each phase's artifact against everything before it; PASS or FAIL. This is the playbook's independent confidence gate. |
 | `agents/sdlc-verifier.md` | Fresh-context checks: the verify command, each requirement's proof, Playwright against the mock. Reports only. |
-| `agents/sdlc-implementer.md` | Runs one parallel-safe plan step in its own git worktree. |
+| `agents/sdlc-implementer.md` | Single-repo mode: runs one parallel-safe plan step in its own git worktree. |
+| `agents/sdlc-repo-implementer.md` | Workspace mode: implements one repository's plan steps in place and leaves the commit to the main session. |
 | `agents/sdlc-test-writer.md` | Writes the failing test before a fix. A hook scoped to this agent limits its Edit and Write calls to test files. |
 | `agents/sdlc-diagnoser.md` | Read-only incident and control-band diagnosis for `/sdlc-maintain`. |
 | `rules/sdlc.md` | Always loaded, like a CLAUDE.md section: phases, grilling, context7, Playwright, approval modes, handoff, compaction. |
@@ -173,7 +191,8 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
 9. **Tools.** context7 for anything uncertain, Playwright as the default browser tool, the `gh` CLI instead of a GitHub MCP.
 10. **Local only.** Hooks and settings are project-local, and distribution is a git repo to copy from, not a plugin.
 11. **One-time setup.** The playbook's one-time plays (CLAUDE.md, policy skills, guardrails, approval gates, evals, CI/CD, control bands) live in `/sdlc-setup`, so each phase skill stays one linear workflow.
-12. **Code review is deferred.** `/sdlc-deploy` runs a fresh-subagent review; a fuller review setup will come separately.
+12. **Workspace mode.** One folder holding several repositories, so one task can change several repositories at once, each on its own `sdlc/<slug>` branch.
+13. **Code review is deferred.** `/sdlc-deploy` runs a fresh-subagent review; a fuller review setup will come separately.
 
 ## Limitations
 

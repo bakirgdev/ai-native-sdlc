@@ -1,6 +1,6 @@
 ---
 name: sdlc-implementer
-description: Implements one parallel-safe step of an accepted plan.md in its own git worktree, with tests, and reports the commits. Use from /sdlc-build for steps marked parallel-safe whose files no other running step touches, two or three at a time.
+description: Single-repo mode. Implements one parallel-safe step of an accepted plan.md in its own git worktree, with tests, and reports the commits. Use from /sdlc-build for steps marked parallel-safe whose files no other running step touches, two or three at a time.
 isolation: worktree
 model: sonnet
 effort: high

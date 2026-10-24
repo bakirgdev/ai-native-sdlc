@@ -1,20 +1,29 @@
 #!/bin/sh
-# Status of the AI-native SDLC tasks in this repository.
+# Status of the AI-native SDLC tasks in this project.
 #   status.sh [slug]     task table, then details and the next command for one task
-#   status.sh --line     one line for the checked-out task (for your status line script)
-#   status.sh --context  SessionStart hook output with the checked-out task's state
+#   status.sh --line     one line for the current task (for your status line script)
+#   status.sh --context  SessionStart hook output with the current task's state
+# The current task is the checked-out sdlc/<slug> branch: of the project in
+# single-repo mode, of the repository you are in (or the only unfinished task)
+# in workspace mode.
 set -u
 here=$(cd "$(dirname "$0")" && pwd -P)
 # shellcheck source=lib.sh
 . "$here/lib.sh"
 
 arg=${1:-}
-root=$(sdlc_root) || { echo "Not inside a git repository."; exit 0; }
-cur=$(sdlc_branch_slug "$root") || cur=
+if sdlc_workspace; then
+  root=$SDLC_PROJECT
+  r=$(sdlc_root .) && [ "$r" != "$SDLC_PROJECT" ] && cur=$(sdlc_branch_slug "$r") || cur=
+else
+  root=$(sdlc_root "$SDLC_PROJECT") || { echo "Not inside a git repository."; exit 0; }
+  cur=$(sdlc_branch_slug "$root") || cur=
+fi
 
 slugs() {
   {
-    git -C "$root" for-each-ref --format='%(refname:strip=3)' refs/heads/sdlc/
+    sdlc_workspace ||
+      git -C "$root" for-each-ref --format='%(refname:strip=3)' refs/heads/sdlc/
     for d in "$root"/sdlc/*/; do
       [ -f "${d}task.yaml" ] && basename "$d"
     done
@@ -33,6 +42,12 @@ progress() {
 }
 
 field() { sdlc_task_field "$root" "$1" task.yaml "$2"; }
+
+# Workspace mode without a current branch: the only unfinished task, if exactly one.
+if [ -z "$cur" ] && sdlc_workspace; then
+  open=$(for s in $(slugs); do [ "$(sdlc_current_phase "$root" "$s")" = "done" ] || echo "$s"; done)
+  [ "$(printf '%s' "$open" | grep -c .)" -eq 1 ] && cur=$open
+fi
 
 case $arg in
   --line)
@@ -82,7 +97,21 @@ fi
 
 echo
 echo "Task $sel: $(field "$sel" title)"
-echo "  branch sdlc/$sel, pr $(field "$sel" pr)"
+if sdlc_workspace; then
+  echo "  pr $(field "$sel" pr), repos: $(field "$sel" repos)"
+  for r in $(field "$sel" repos | tr ',' ' '); do
+    if [ ! -e "$root/$r/.git" ]; then
+      printf '    %-20s %s\n' "$r" "missing from the workspace"
+    elif git -C "$root/$r" rev-parse --verify --quiet "refs/heads/sdlc/$sel" >/dev/null; then
+      printf '    %-20s %s, on %s, %s changed\n' "$r" "branch sdlc/$sel" \
+        "$(git -C "$root/$r" branch --show-current)" "$(git -C "$root/$r" status --porcelain | grep -c .)"
+    else
+      printf '    %-20s %s\n' "$r" "no branch sdlc/$sel yet"
+    fi
+  done
+else
+  echo "  branch sdlc/$sel, pr $(field "$sel" pr)"
+fi
 for p in $SDLC_PHASES; do
   a=$(sdlc_artifact "$p")
   st=$(sdlc_task_field "$root" "$sel" "$a" status)

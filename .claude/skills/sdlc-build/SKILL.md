@@ -18,14 +18,14 @@ Implement the accepted plan, checking every step against the project's own tests
 
 ## Steps
 
-1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. plan.md must be `accepted`; the plan gate hook blocks code edits otherwise. If `SDLC_VERIFY` is empty, stop and ask the user to run `/sdlc-setup verify` first, because the commit gate needs it.
+1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. plan.md must be `accepted`; the plan gate hook blocks code edits otherwise. If a check command is missing (`SDLC_VERIFY`, or in workspace mode a task repository's line in `.claude/sdlc-workspace.yaml`), stop and ask the user to run `/sdlc-setup verify` (or `/sdlc-setup workspace`) first, because the commit gate needs it.
 2. Read plan.md, spec.md and CLAUDE.md. Check library and API details with context7 as you go.
 3. Work the steps in order. For each one:
    1. Where practical, start with a test that proves its R#; the `sdlc-test-writer` agent writes it and confirms it fails.
    2. Implement the step.
    3. Run the narrowest relevant test while iterating, then the full `$SDLC_VERIFY`, and fix until it passes. Never weaken a check.
-4. Hand `parallel-safe` steps to `sdlc-implementer` agents, two or three at a time, each in its own worktree. Commit your work first, because each worktree starts from the default branch and fast-forwards to `sdlc/<slug>`. Merge their branches into `sdlc/<slug>`, then run the full verify command.
-5. Commit in logical steps, following the repository's commit convention. The commit gate runs `$SDLC_VERIFY` on every code commit.
+4. Hand `parallel-safe` steps to `sdlc-implementer` agents, two or three at a time, each in its own worktree. Commit your work first, because each worktree starts from the default branch and fast-forwards to `sdlc/<slug>`. Merge their branches into `sdlc/<slug>`, then run the full verify command. In workspace mode use `sdlc-repo-implementer` instead: one agent per repository at a time, working in the repository itself with no worktree and no commits. When they are all done and each repository's check passes, commit each repository.
+5. Commit in logical steps, following the repository's commit convention (in workspace mode, per repository with `git -C <repo>`). The commit gate runs the check command on every code commit.
 6. Handle deviations:
    - Same requirements, different detail: record it under `## Changes` in plan.md and commit that with the code.
    - A change of scope, requirements or design: stop and grill the user. Set plan.md (and spec.md if needed) back to `draft`, record why under `## Changes`, commit, and end the session with `.claude/sdlc-scripts/next.sh <slug> --phase plan` (or `--phase spec`). Build resumes after the plan is accepted again.

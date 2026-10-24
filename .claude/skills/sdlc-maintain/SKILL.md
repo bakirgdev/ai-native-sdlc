@@ -14,10 +14,10 @@ Input: $ARGUMENTS
 Choose the play from the first word: `breach`, `oncall`, `scan` or `triage`. Empty input means `triage`. For anything else, list the four plays and ask.
 
 Every play turns a finding into a new task the same way:
-1. Create branch `sdlc/<slug>` from the default branch.
+1. Create branch `sdlc/<slug>` from the default branch (in workspace mode, in each repository the finding concerns, listed as `repos:`).
 2. Write `sdlc/<slug>/task.yaml` with `gate_mode: solo`, `run_mode: manual` and `pr: ask` unless the user says otherwise.
 3. Write `sdlc/<slug>/intent.md` in the `/sdlc-intent` format, with `status: draft`, an agent `author`, and the evidence in the Problem section.
-4. Commit both files. The new task then waits for `triage`.
+4. Commit both files (in workspace mode, only as `.claude/rules/sdlc.md` allows). The new task then waits for `triage`.
 
 Above the `log` tier, writing and committing that intent is the one write always allowed.
 

@@ -19,7 +19,7 @@ The work is checked by a context that did not write it, and every claim ends up 
 ## Steps
 
 1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. build.md must be `accepted`.
-2. Run the `sdlc-verifier` agent with the slug. It runs `$SDLC_VERIFY`, each proof in plan.md, and, when spec.md has a `mock:`, a Playwright comparison against the mock. It reports evidence and never fixes anything.
+2. Run the `sdlc-verifier` agent with the slug. It runs `$SDLC_VERIFY` (in workspace mode, each task repository's check command), each proof in plan.md including any check across repositories, and, when spec.md has a `mock:`, a Playwright comparison against the mock. It reports evidence and never fixes anything.
 3. When `pr-review-toolkit` is installed, also run its `pr-test-analyzer` agent (coverage gaps against the R# list) and its `silent-failure-hunter` agent (swallowed errors) on the branch diff.
 4. Fix every failure or gap test-first:
    1. The `sdlc-test-writer` agent writes a test that reproduces it. Confirm the test fails for the expected reason, and quote the failure line.
