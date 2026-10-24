@@ -200,6 +200,7 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
   - A file written through a shell command skips the plan gate until the commit gate sees it.
   - The commit gate does not try to work out which repository a command commits to. While this project's SDLC branch has unmet conditions, any command that mentions `commit` is blocked, including commits to other repositories. Commits by `sdlc-implementer` in its own worktree are exempt and verified after the merge.
   - For enforcement that sees the real commit, add a native git `pre-commit` hook (`core.hooksPath`) running the same checks. It needs setup in every clone.
+  - The check commands live in files Claude can edit (`SDLC_VERIFY` in `.claude/settings.json`, `.claude/sdlc-workspace.yaml`), like the tests themselves. Review changes to them in the diff.
   - In `solo` and `auto` modes the agent records the approval. In `strict` mode the hard boundary is branch protection with a code owner's review.
 - **Starting a phase with a skill as the first prompt** (`claude "/sdlc-spec x"`) was verified with background sessions (`claude --bg`) and `claude -p`.
 - **Session transcripts expire** after `cleanupPeriodDays` (30 days by default). Raise it if you rely on backtracking.

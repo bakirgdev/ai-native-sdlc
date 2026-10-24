@@ -1,8 +1,8 @@
 #!/bin/sh
 # PreToolUse hook (Edit|Write|MultiEdit|NotebookEdit). When the edited file's
-# repository is on branch sdlc/<slug>, blocks the edit until
+# repository is on branch sdlc/<slug>, wherever it lives, blocks the edit until
 # sdlc/<slug>/plan.md (in the project folder) is accepted. The task files in the
-# project's sdlc/ and files outside the project (for example plan-mode drafts in
+# project's sdlc/ and files in no repository (for example plan-mode drafts in
 # ~/.claude/plans) pass. Works in single-repo and workspace mode alike.
 # shellcheck source=../sdlc-scripts/lib.sh
 . "$(dirname "$0")/../sdlc-scripts/lib.sh"
@@ -27,13 +27,12 @@ fi
 file=$(sdlc_resolve_path "$file" "${cwd:-$SDLC_PROJECT}")
 case $file in
   "$SDLC_PROJECT"/sdlc/*) exit 0 ;;
-  "$SDLC_PROJECT"/*) ;;
-  *) exit 0 ;;
 esac
 
-# The repository that holds the file: the project itself, or a workspace repo.
+# The repository that holds the file (git only reads, nothing runs from it).
 d=${file%/*}
 while [ -n "$d" ] && [ ! -d "$d" ]; do d=${d%/*}; done
+[ -n "$d" ] || exit 0
 repo=$(sdlc_root "$d") || exit 0
 slug=$(sdlc_branch_slug "$repo") || exit 0
 

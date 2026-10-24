@@ -1,10 +1,11 @@
 #!/bin/sh
 # PreToolUse hook (Bash, if "Bash(git commit*)"). Every repository on a branch
 # sdlc/<slug> that has code changes needs an accepted sdlc/<slug>/plan.md and a
-# passing check command before any commit goes through:
-#   single-repo mode: the project repository, checked with $SDLC_VERIFY;
-#   workspace mode: each workspace repository, checked with its command in
-#   .claude/sdlc-workspace.yaml.
+# passing check command before any commit goes through. Both kinds are always
+# checked, whatever the mode:
+#   the project's own repository, with $SDLC_VERIFY;
+#   each repository directly inside the project (workspace mode), with its
+#   command in .claude/sdlc-workspace.yaml.
 # Changes to the task files (the project's sdlc/) pass, and so do changes to
 # test files alone, which may hold a deliberately failing test (test-first).
 # shellcheck source=../sdlc-scripts/lib.sh
@@ -55,7 +56,7 @@ check_repo() {
     return 0
   fi
 
-  if sdlc_workspace; then
+  if [ "$repo" != "$root" ]; then
     verify=$(sdlc_field "$SDLC_WORKSPACE_FILE" "$name")
     if [ -z "$verify" ]; then
       echo "SDLC commit gate: no check command for repository $name. Add \"$name: <command>\" to .claude/sdlc-workspace.yaml (/sdlc-setup workspace), or \"$name: true\" to opt out." >&2
@@ -79,17 +80,14 @@ check_repo() {
   exit 2
 }
 
-if sdlc_workspace; then
-  repos=$(sdlc_repos)
-  old_ifs=$IFS
-  IFS='
+root=$(sdlc_root "$SDLC_PROJECT") || root=
+[ -n "$root" ] && check_repo "$root"
+repos=$(sdlc_repos)
+old_ifs=$IFS
+IFS='
 '
-  for name in $repos; do
-    IFS=$old_ifs
-    check_repo "$SDLC_PROJECT/$name"
-  done
-else
-  root=$(sdlc_root "$SDLC_PROJECT") || exit 0
-  check_repo "$root"
-fi
+for name in $repos; do
+  IFS=$old_ifs
+  check_repo "$SDLC_PROJECT/$name"
+done
 exit 0
