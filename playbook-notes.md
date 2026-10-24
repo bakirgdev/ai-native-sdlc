@@ -60,7 +60,7 @@ Measures:
 
 Shift: requirements and design stop being two phases run by two teams. They collapse into one prompted session where Claude turns the accepted intent into a spec, constrained by organizational skills (brand, security, compliance, UX), with concerns flagged. Policy is applied while writing, not found in a review weeks later.
 
-- Requirements and design. Command here: `/sdlc-design`.
+- Requirements and design. Command here: `/sdlc-spec`.
   - Prerequisites: an intent plus the policies written as skills. Only a product owner with Claude access is needed, no engineering skill.
   - Steps: open a session with the skills loaded and the intent attached; prompt for a full spec that names constraints and demands flagged concerns, especially contradictory policies; review the spec against the original idea (does it solve the problem, are open questions answered or carried forward); clear flagged concerns with their policy owners first; commit `spec.md` next to `intent.md`; the product owner decides whether to proceed, consulting a tech lead for higher-risk work. A human always makes that call.
   - Automation path: run by hand, then make it an org-level slash command, then make intent acceptance trigger a non-interactive job that opens the spec as a pull request, so the product owner's first touch is the review.
@@ -200,7 +200,7 @@ Measures:
 - One session per phase. Each command ends by printing the next phase's command instead of firing it automatically, so a human starts every stage in a fresh session.
 - Plan is split from build: `/sdlc-plan` produces and commits `plan.md`; `/sdlc-build` implements. The playbook treats plan mode and implementation as one play.
 - Artifacts live in a per-task folder, `sdlc/<slug>/`, rather than in a shared intent home plus separate locations.
-- Gate approval modes (solo, solo-auto, strict). The playbook assumes distinct roles (product owner, tech lead, code owner); here one person often holds all of them, so the mode sets how much self-approval is allowed.
+- Gate approval modes (solo, auto, strict). The playbook assumes distinct roles (product owner, tech lead, code owner); here one person often holds all of them, so the mode sets how much self-approval is allowed.
 - An opt-in autonomous run mode, a lighter relative of the playbook's auto mode and headless loop. It stays off unless asked for.
 - Questions to the user go through the `grilling` skill.
 - Code review is deferred: `/sdlc-deploy` covers the pipeline and release side, and the PR review loop is not implemented yet (see the README).
