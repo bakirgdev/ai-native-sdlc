@@ -8,31 +8,56 @@
 . "$(dirname "$0")/../sdlc/lib.sh"
 
 input=$(cat)
-cwd=
+# git and $SDLC_VERIFY only ever run in this project's root, never in a directory
+# taken from the command text, which could be an untrusted repository.
+project=$(cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null && pwd -P) || exit 0
+
+# True when an absolute path inside the project lies in another checkout (a nested
+# repository or a git worktree, such as an sdlc-implementer's), found without git.
+in_other_checkout() {
+  _p=$1
+  while [ "$_p" != "$project" ] && [ -n "$_p" ]; do
+    [ -e "$_p/.git" ] && return 0
+    _p=${_p%/*}
+  done
+  return 1
+}
+
 if command -v jq >/dev/null 2>&1; then
   cwd=$(printf '%s' "$input" | jq -r '.cwd // empty')
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
   # The hook's "if" filter also lets through commands it cannot parse, so check
   # for a git commit here (including "git -C dir commit" and "git -c k=v commit").
-  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
   printf '%s\n' "$cmd" |
     grep -Eq '(^|[^[:alnum:]_-])git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+commit([[:space:]]|$)' ||
     exit 0
-  # Judge the repository the commit targets: "git -C <dir>" or a leading "cd <dir> &&".
-  target=$(printf '%s\n' "$cmd" | sed -nE 's/.*git[[:space:]]+-C[[:space:]]+([^[:space:];&|]+).*/\1/p' | head -n 1)
-  [ -n "$target" ] ||
-    target=$(printf '%s\n' "$cmd" | sed -nE 's/^[[:space:]]*cd[[:space:]]+([^[:space:];&|]+)[[:space:]]*&&.*/\1/p' | head -n 1)
-  target=${target#[\"\']}
-  target=${target%[\"\']}
-  if [ -n "$target" ]; then
-    case $target in
-      /*) cwd=$target ;;
-      *) cwd="${cwd:-.}/$target" ;;
+  # Skip the gate only when the commit clearly runs in another checkout: the single
+  # "cd <dir>" or "git -C <dir>" in the command (or, with none, the session directory)
+  # resolves outside this project or into a nested checkout. Anything less clear is gated.
+  targets=$( {
+    printf '%s\n' "$cmd" | grep -oE '(^|[;&|[:space:]])cd[[:space:]]+[^[:space:];&|]+' |
+      sed -E 's/^[;&|[:space:]]*cd[[:space:]]+//'
+    printf '%s\n' "$cmd" | grep -oE 'git([[:space:]]+-c[[:space:]]+[^[:space:]]+)*[[:space:]]+-C[[:space:]]+[^[:space:];&|]+' |
+      sed -E 's/.*-C[[:space:]]+//'
+  })
+  t=
+  if [ -z "$targets" ]; then
+    t=$cwd
+  elif [ "$(printf '%s\n' "$targets" | wc -l)" -eq 1 ]; then
+    t=${targets#[\"\']}
+    t=${t%[\"\']}
+    case $t in /*) ;; *) t="${cwd:-$project}/$t" ;; esac
+  fi
+  if [ -n "$t" ] && abs=$(cd "$t" 2>/dev/null && pwd -P); then
+    case $abs in
+      "$project" | "$project"/*) in_other_checkout "$abs" && exit 0 ;;
+      *) exit 0 ;;
     esac
   fi
 fi
-dir=${cwd:-.}
-slug=$(sdlc_branch_slug "$dir") || exit 0
-root=$(sdlc_root "$dir") || exit 0
+
+slug=$(sdlc_branch_slug "$project") || exit 0
+root=$(sdlc_root "$project") || exit 0
 cd "$root" || exit 0
 
 # Staged, unstaged and untracked paths: the command may stage files before committing.
