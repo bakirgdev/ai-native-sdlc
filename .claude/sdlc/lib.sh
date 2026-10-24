@@ -1,0 +1,97 @@
+# Shared helpers for the AI-native SDLC scripts and hooks. POSIX sh; needs git.
+# Source it: . "<this dir>/lib.sh"
+
+SDLC_PHASES="intent design plan build test deploy"
+
+# Repository root of a directory (default: current directory).
+sdlc_root() {
+  git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null
+}
+
+# Prints the task slug when HEAD is on branch sdlc/<slug>; fails otherwise.
+sdlc_branch_slug() {
+  _b=$(git -C "${1:-.}" symbolic-ref --quiet --short HEAD 2>/dev/null) || return 1
+  case $_b in
+    sdlc/?*) printf '%s\n' "${_b#sdlc/}" ;;
+    *) return 1 ;;
+  esac
+}
+
+# Artifact file name for a phase.
+sdlc_artifact() {
+  case $1 in
+    intent) echo intent.md ;;
+    design) echo spec.md ;;
+    plan) echo plan.md ;;
+    build) echo build.md ;;
+    test) echo test.md ;;
+    deploy) echo deploy.md ;;
+    *) return 1 ;;
+  esac
+}
+
+# True when a path looks like a test file, by the directory and file names
+# common test frameworks use.
+sdlc_is_test_path() {
+  case /${1%/*}/ in
+    */test/* | */tests/* | */__tests__/* | */spec/* | */specs/* | */e2e/* | */testdata/* | */fixtures/*) return 0 ;;
+  esac
+  case ${1##*/} in
+    *.test.* | *.spec.* | *_test.* | *_spec.* | test_* | *Test.* | *Tests.*) return 0 ;;
+  esac
+  return 1
+}
+
+# Reads text on stdin and prints the value of the first top-level "key: value"
+# line. With is_markdown=1 only YAML frontmatter is searched.
+# Usage: sdlc_field_in <key> <is_markdown>
+sdlc_field_in() {
+  awk -v k="$1" -v md="$2" '
+    NR == 1 && $0 == "---" { fm = 1; next }
+    NR == 1 && md == 1 { exit }
+    fm && $0 == "---" { exit }
+    index($0, k ":") == 1 {
+      v = substr($0, length(k) + 2)
+      sub(/^[ \t]+/, "", v); sub(/[ \t]+$/, "", v)
+      if (v ~ /^".*"$/ || v ~ /^\047.*\047$/) v = substr(v, 2, length(v) - 2)
+      print v; exit
+    }
+  '
+}
+
+# Value of a key in a task file (task.yaml, or an artifact's frontmatter).
+sdlc_field() {
+  [ -f "$1" ] || return 1
+  case $1 in *.md) _md=1 ;; *) _md=0 ;; esac
+  sdlc_field_in "$2" "$_md" < "$1"
+}
+
+# Prints sdlc/<slug>/<file>. Tasks other than the checked-out one are read from
+# their branch, because their files exist only there until merged.
+# Usage: sdlc_task_file <root> <slug> <file>
+sdlc_task_file() {
+  if [ "$(sdlc_branch_slug "$1")" != "$2" ] &&
+    git -C "$1" rev-parse --verify --quiet "refs/heads/sdlc/$2" >/dev/null; then
+    git -C "$1" show "sdlc/$2:sdlc/$2/$3" 2>/dev/null
+  else
+    cat "$1/sdlc/$2/$3" 2>/dev/null
+  fi
+}
+
+# Usage: sdlc_task_field <root> <slug> <file> <key>
+sdlc_task_field() {
+  case $3 in *.md) _md=1 ;; *) _md=0 ;; esac
+  sdlc_task_file "$1" "$2" "$3" | sdlc_field_in "$4" "$_md"
+}
+
+# First phase whose artifact is not accepted, or "done".
+# Usage: sdlc_current_phase <root> <slug>
+sdlc_current_phase() {
+  for _p in $SDLC_PHASES; do
+    if [ "$(sdlc_task_field "$1" "$2" "$(sdlc_artifact "$_p")" status)" != accepted ]; then
+      echo "$_p"
+      return 0
+    fi
+  done
+  echo "done"
+}
