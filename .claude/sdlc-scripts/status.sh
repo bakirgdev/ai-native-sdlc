@@ -104,7 +104,7 @@ if sdlc_workspace; then
       printf '    %-20s %s\n' "$r" "missing from the workspace"
     elif git -C "$root/$r" rev-parse --verify --quiet "refs/heads/sdlc/$sel" >/dev/null; then
       printf '    %-20s %s, on %s, %s changed\n' "$r" "branch sdlc/$sel" \
-        "$(git -C "$root/$r" branch --show-current)" "$(git -C "$root/$r" status --porcelain | grep -c .)"
+        "$(git -C "$root/$r" branch --show-current)" "$(git -c core.fsmonitor=false -C "$root/$r" status --porcelain | grep -c .)"
     else
       printf '    %-20s %s\n' "$r" "no branch sdlc/$sel yet"
     fi

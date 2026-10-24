@@ -25,11 +25,12 @@ fi
 
 # Prints the repository's changed paths outside the task files: staged,
 # unstaged and untracked, because the command may stage files before committing.
+# core.fsmonitor is off so a repository's local config cannot start a program.
 changed_paths() {
   {
-    git -C "$1" diff --cached --name-only
-    git -C "$1" diff --name-only
-    git -C "$1" ls-files --others --exclude-standard
+    git -c core.fsmonitor=false -C "$1" diff --cached --name-only
+    git -c core.fsmonitor=false -C "$1" diff --name-only
+    git -c core.fsmonitor=false -C "$1" ls-files --others --exclude-standard
   } | sort -u | while IFS= read -r f; do
     case $1/$f in "$SDLC_PROJECT"/sdlc/*) ;; *) printf '%s\n' "$f" ;; esac
   done
