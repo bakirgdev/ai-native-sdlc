@@ -8,52 +8,16 @@
 . "$(dirname "$0")/../sdlc/lib.sh"
 
 input=$(cat)
-# git and $SDLC_VERIFY only ever run in this project's root, never in a directory
-# taken from the command text, which could be an untrusted repository.
+# git and $SDLC_VERIFY only ever run in this project's root. Which repository a
+# command targets is deliberately not parsed (shell parsing is unreliable): any
+# command that mentions a commit is judged against this project.
 project=$(cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null && pwd -P) || exit 0
-
-# True when an absolute path inside the project lies in another checkout (a nested
-# repository or a git worktree, such as an sdlc-implementer's), found without git.
-in_other_checkout() {
-  _p=$1
-  while [ "$_p" != "$project" ] && [ -n "$_p" ]; do
-    [ -e "$_p/.git" ] && return 0
-    _p=${_p%/*}
-  done
-  return 1
-}
-
 if command -v jq >/dev/null 2>&1; then
-  cwd=$(printf '%s' "$input" | jq -r '.cwd // empty')
-  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
-  # The hook's "if" filter also lets through commands it cannot parse, so check
-  # for a git commit here (including "git -C dir commit" and "git -c k=v commit").
-  printf '%s\n' "$cmd" |
-    grep -Eq '(^|[^[:alnum:]_-])git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+commit([[:space:]]|$)' ||
-    exit 0
-  # Skip the gate only when the commit clearly runs in another checkout: the single
-  # "cd <dir>" or "git -C <dir>" in the command (or, with none, the session directory)
-  # resolves outside this project or into a nested checkout. Anything less clear is gated.
-  targets=$( {
-    printf '%s\n' "$cmd" | grep -oE '(^|[;&|[:space:]])cd[[:space:]]+[^[:space:];&|]+' |
-      sed -E 's/^[;&|[:space:]]*cd[[:space:]]+//'
-    printf '%s\n' "$cmd" | grep -oE 'git([[:space:]]+-c[[:space:]]+[^[:space:]]+)*[[:space:]]+-C[[:space:]]+[^[:space:];&|]+' |
-      sed -E 's/.*-C[[:space:]]+//'
-  })
-  t=
-  if [ -z "$targets" ]; then
-    t=$cwd
-  elif [ "$(printf '%s\n' "$targets" | wc -l)" -eq 1 ]; then
-    t=${targets#[\"\']}
-    t=${t%[\"\']}
-    case $t in /*) ;; *) t="${cwd:-$project}/$t" ;; esac
-  fi
-  if [ -n "$t" ] && abs=$(cd "$t" 2>/dev/null && pwd -P); then
-    case $abs in
-      "$project" | "$project"/*) in_other_checkout "$abs" && exit 0 ;;
-      *) exit 0 ;;
-    esac
-  fi
+  # sdlc-implementer commits in its own worktree; its work is verified after the
+  # merge. Claude Code sets agent_type; the model cannot.
+  [ "$(printf '%s' "$input" | jq -r '.agent_type // empty')" = sdlc-implementer ] && exit 0
+  # The hook's "if" filter also lets through commands it cannot parse.
+  printf '%s' "$input" | jq -r '.tool_input.command // empty' | grep -qw commit || exit 0
 fi
 
 slug=$(sdlc_branch_slug "$project") || exit 0
