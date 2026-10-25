@@ -20,6 +20,7 @@ This project runs changes through the AI-native SDLC skills. A task lives in `sd
 - **Check facts with context7.** Before relying on any library, framework, SDK, API, CLI or cloud-service detail you are not fully sure of, query the context7 MCP tools. If context7 is unavailable, say so and use the official documentation.
 - **Browser checks use Playwright** (the Playwright MCP tools, or the project's Playwright test runner) unless the user asks for another tool, such as Claude in Chrome.
 - **Never weaken a check to make it pass.** Fix the code, not the test.
+- **Attribution follows the user.** Commits, pull requests, issues, releases and artifacts keep Claude Code's default attribution lines (such as `Co-Authored-By` and the PR footer). When the user's instructions (CLAUDE.md, memory, or chat) ask for no attribution to Claude, leave it out everywhere, including in agents' commits.
 - **Help improve the SDLC itself.** These skills, agents, rules, hooks and scripts get better only when the sessions running them say where they fall short. When part of the flow gets in the way of good work, write it down rather than quietly working around it. Typical cases:
   - a step that is unclear, can be read two ways, or disagrees with another file;
   - a hook or gate that blocks correct work, or lets through work it should stop;

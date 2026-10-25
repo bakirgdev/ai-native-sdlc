@@ -244,6 +244,7 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
 12. **Workspace mode.** One folder holding several repositories, so one task can change several repositories at once, each on its own `sdlc/<slug>` branch.
 13. **Risk-scaled code review.** Based on [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/). See "Code review" above.
 14. **SDLC feedback.** Every session records where the flow itself fell short, and deploy turns each entry into an issue upstream, a project task, or a dropped note. See "Improving the SDLC" above.
+15. **Attribution.** Commits, PRs and issues keep Claude Code's default attribution, unless your CLAUDE.md, memory or chat asks for none; then it is left out everywhere.
 
 ## Limitations
 
