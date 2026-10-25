@@ -136,7 +136,7 @@ Measures:
 
 Shift: humans reading every line and governance by periodic review cycles give way to layered agentic review (human review kept for regulated and critical code) and governance enforced as the agent acts. The agent may do everything up to the production gate and nothing beyond it.
 
-- AI in the PR review loop. Command here: `/sdlc-deploy` (the review itself is deferred in this repo, see the README).
+- AI in the PR review loop. Commands here: `/sdlc-deploy` (risk-scaled review, see the README) and `/sdlc-setup review` (`REVIEW.md`).
   - Claude reviews incoming PRs against policy and also handles comments on its own PRs, so humans judge intent and risk. Every PR gets the same passes, with findings ranked by severity.
   - Setup: managed Code Review service (enabled by an admin; the course says an Owner of the Claude organization) or the Claude Code action in your own CI, optionally via Bedrock, Vertex or Foundry. Branch protection requiring a code owner is worthwhile.
   - Steps: the tech lead writes `REVIEW.md` defining passes (bugs, security, compliance against spec, plan and design principles), what counts as important versus a nit, and what to skip; findings never approve or block alone, a code owner still approves (a platform engineer can gate on the published severity counts); tagging `@claude` on a comment makes Claude fix and push (in the managed service it requests a fresh review); Claude can shepherd its own PRs to green; repeated review findings go into CLAUDE.md; monthly tuning rates findings and caps nits.
@@ -204,4 +204,4 @@ Measures:
 - An opt-in autonomous run mode, a lighter relative of the playbook's auto mode and headless loop. It stays off unless asked for.
 - Questions to the user go through the `grilling` skill.
 - A workspace mode for changes that span several repositories: the task files live in a parent folder and each repository gets its own branch and PR. The playbook describes a single repository.
-- Code review is deferred: `/sdlc-deploy` covers the pipeline and release side, and the PR review loop is not implemented yet (see the README).
+- Code review follows a later Anthropic article, [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/), more than the playbook: the change sets a risk tier, review runs before the push with depth by tier, rounds are capped at three, pre-existing bugs become new intents, and medium and high risk merges need a person.

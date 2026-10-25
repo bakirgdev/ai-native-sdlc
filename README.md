@@ -59,6 +59,32 @@ claude "/sdlc-setup verify"
 
 This sets `SDLC_VERIFY`, the one command that proves the project works. Until it is set, the commit gate blocks code commits on SDLC branches. Pick and change anything you like; everything is plain markdown and POSIX shell.
 
+## Walkthrough
+
+From an empty `.claude/` to a merged change. Run every step in the project folder; each phase runs in its own session.
+
+**Once per project, from the default branch:**
+
+1. `/sdlc-setup verify`: one command that proves the project works. Required: code commits on SDLC branches are blocked until it is set.
+2. `/sdlc-setup claude-md`: a short CLAUDE.md with commands, conventions and mistakes to avoid.
+3. `/sdlc-setup review`: `REVIEW.md`, saying what failure means in this project, the nit cap, paths to skip, and the paths that always need a human.
+4. `/sdlc-setup gates`: approval hooks, plus the branch protection and CODEOWNERS that make the always-human paths binding on GitHub.
+5. Later, when you need them: `evals` (regression suite, including reviewer cases), `pipeline` (CI/CD), `bands <metric>` (production alerts), `policy-skill`, `guardrail`.
+
+**Per change:**
+
+| Step | Run | What happens | What you do |
+|---|---|---|---|
+| 1. Intent | `/sdlc-intent <idea or ticket>` | Claude asks about scope, users and constraints, then writes `intent.md` and `task.yaml` on branch `sdlc/<slug>` | Answer one question round: slug, `gate_mode`, `run_mode`, `pr`. Correct the intent and accept it |
+| 2. Spec | `/sdlc-spec <slug>` | Turns the intent into numbered requirements (R1, R2, ...) and flags conflicting policies | Settle the flagged concerns, accept |
+| 3. Plan | `/sdlc-plan <slug>` | Files, ordered steps, a proof per R#, risks with rollback, and the risk tier (`low`, `medium`, `high`) | Challenge the plan and accept it. Code stays blocked until you do |
+| 4. Build | `/sdlc-build <slug>` | Test-first implementation, parallel steps in worktrees; every code commit runs the check command | Answer questions if scope changes |
+| 5. Test | `/sdlc-test <slug>` | A fresh context proves each R# with tool output and fixes gaps test-first | Accept the evidence |
+| 6. Deploy | `/sdlc-deploy <slug>` | Raises the risk tier if the diff touches risky paths, reviews the branch at that depth (at most three rounds), fixes confirmed findings, opens the PR with Risk and How to revert, works CI and comments | Decide on findings Claude calls wrong or intentional. Say yes to the merge for `medium` and `high` risk |
+| 7. After release | `/sdlc-maintain triage` | Lists agent-written intents: alerts, scans, and pre-existing bugs found in review | Fix now, schedule or dismiss each |
+
+Every phase ends by printing the next command (or starting it, in autonomous mode). `/sdlc-status` shows where every task stands. Details for each part follow below.
+
 ## Use
 
 Start a task:
@@ -98,6 +124,18 @@ Before every approval the `sdlc-gatekeeper` agent checks the phase's artifact ag
 
 Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions instead of clearing one. Within a phase, Claude Code compacts automatically when needed. The always-loaded rule says what a summary must keep, and a SessionStart hook re-injects the task state after compaction and on resume.
 
+### Code review
+
+`/sdlc-deploy` reviews the branch before it pushes, following [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/).
+
+- **The change sets the risk tier.** The plan sets `risk: low | medium | high` in task.yaml. Deploy raises it to `high` when the diff touches CI or release workflows, `.claude/`, `CLAUDE.md`, `REVIEW.md` or a path under `## Always human` in REVIEW.md. The tier never goes down.
+- **Depth follows the tier.** `low`: the `sdlc-reviewer` agent. `medium`: plus `/code-review high` and `/security-review`. `high`: `sdlc-reviewer` on opus, `/code-review max` and `/security-review`. A fresh `sdlc-reviewer` then verifies the Important (including all security) and Pre-existing findings, and only confirmed ones are fixed, test-first.
+- **Severity** is Important, Nit or Pre-existing. Pre-existing bugs are not fixed in the PR; each becomes a new draft intent for `/sdlc-maintain triage`.
+- **At most three rounds.** Later rounds review only the new commits and never repeat a finding. After three, Claude asks you to rethink the approach.
+- **Every finding gets an outcome** in deploy.md (`fixed`, `wrong`, `intentional`, `unimportant`, `deferred-intent`), which shows how noisy review is.
+- **Merge by tier.** `low` follows `pr:`. `medium` and `high` always need your yes, even with `pr: auto` or `gate_mode: auto`.
+- `/sdlc-setup review` writes `REVIEW.md`: what failure means in your repository, a nit cap, paths to skip, evidence rules and always-human paths. The managed Code Review service reads it too; its PR comments are handled like any other finding. `/sdlc-setup gates` suggests the branch protection that makes always-human paths binding, and `/sdlc-setup evals` can score the reviewer on past incidents.
+
 ### Status
 
 - `/sdlc-status [slug]` shows every task's phase, status and approver, and the next command. It also reads tasks whose branch is not checked out.
@@ -132,6 +170,7 @@ Always start Claude in `work/`. The gates check every repository there: a code c
 |---|---|
 | `skills/sdlc-*/SKILL.md` | The 9 commands. Phase skills are user-invoked only; `sdlc-status` can also be used by Claude. |
 | `agents/sdlc-gatekeeper.md` | Read-only, opus. Checks each phase's artifact against everything before it; PASS or FAIL. This is the playbook's independent confidence gate. |
+| `agents/sdlc-reviewer.md` | Read-only code review against intent, spec, plan, CLAUDE.md and REVIEW.md, or verification of other reviewers' findings. Used by `/sdlc-deploy`. |
 | `agents/sdlc-verifier.md` | Fresh-context checks: the verify command, each requirement's proof, Playwright against the mock. Reports only. |
 | `agents/sdlc-implementer.md` | Single-repo mode: runs one parallel-safe plan step in its own git worktree. |
 | `agents/sdlc-repo-implementer.md` | Workspace mode: implements one repository's plan steps in place and leaves the commit to the main session. |
@@ -171,8 +210,7 @@ Want the SDLC rules inside CLAUDE.md instead of a rule file? Paste `rules/sdlc.m
   - your vendors' plugins (Sentry, Datadog, Linear and others) for the maintain phase.
 - **Not used:**
   - the GitHub MCP plugin, because the `gh` CLI covers GitHub;
-  - `ralph-loop`, whose Stop-hook loop works against the approval gates;
-  - review bots, because code review is deferred.
+  - `ralph-loop`, whose Stop-hook loop works against the approval gates.
 
 **MCP.** The SDLC needs no project MCP server, so no `.mcp.json` ships. Put general servers in your user scope (`claude mcp add --scope user`), and project-specific ones in that project's `.mcp.json`: issue tracker, deploy targets, observability.
 
@@ -190,9 +228,9 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
 8. **Autonomous mode.** An opt-in run mode chains the phases through background sessions.
 9. **Tools.** context7 for anything uncertain, Playwright as the default browser tool, the `gh` CLI instead of a GitHub MCP.
 10. **Local only.** Hooks and settings are project-local, and distribution is a git repo to copy from, not a plugin.
-11. **One-time setup.** The playbook's one-time plays (CLAUDE.md, policy skills, guardrails, approval gates, evals, CI/CD, control bands) live in `/sdlc-setup`, so each phase skill stays one linear workflow.
+11. **One-time setup.** The playbook's one-time plays (CLAUDE.md, REVIEW.md, policy skills, guardrails, approval gates, evals, CI/CD, control bands) live in `/sdlc-setup`, so each phase skill stays one linear workflow.
 12. **Workspace mode.** One folder holding several repositories, so one task can change several repositories at once, each on its own `sdlc/<slug>` branch.
-13. **Code review is deferred.** `/sdlc-deploy` runs a fresh-subagent review; a fuller review setup will come separately.
+13. **Risk-scaled code review.** Based on [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/). See "Code review" above.
 
 ## Limitations
 

@@ -1,7 +1,7 @@
 ---
 name: sdlc-setup
-description: One-time project setup for the AI-native SDLC. Plays are verify (the feedback loop and SDLC_VERIFY), workspace (several git repositories in one folder), claude-md, policy-skill, guardrail (build-time hooks), gates (approval hooks), evals (a regression suite for the agent's configuration), pipeline (CI/CD) and bands (control-band detection). Run each play once per project, from the default branch.
-argument-hint: "verify | workspace | claude-md | policy-skill <policy> | guardrail <rule> | gates | evals | pipeline | bands <metric>"
+description: One-time project setup for the AI-native SDLC. Plays are verify (the feedback loop and SDLC_VERIFY), workspace (several git repositories in one folder), claude-md, review (REVIEW.md for code review), policy-skill, guardrail (build-time hooks), gates (approval hooks), evals (a regression suite for the agent's configuration), pipeline (CI/CD) and bands (control-band detection). Run each play once per project, from the default branch.
+argument-hint: "verify | workspace | claude-md | review | policy-skill <policy> | guardrail <rule> | gates | evals | pipeline | bands <metric>"
 disable-model-invocation: true
 ---
 
@@ -10,7 +10,7 @@ disable-model-invocation: true
 Input: $ARGUMENTS
 
 Choose the play from the first word.
-- Empty input: show which plays are already in place (SDLC_VERIFY set, a verify section in CLAUDE.md, policy skills, project hooks, `evals/`, `bands.yaml`) and ask which to run.
+- Empty input: show which plays are already in place (SDLC_VERIFY set, a verify section in CLAUDE.md, REVIEW.md, policy skills, project hooks, `evals/`, `bands.yaml`) and ask which to run.
 - Anything else: list the plays and ask.
 
 Rules for every play:
@@ -48,6 +48,22 @@ Use it when this folder, whether a git repository or not, holds several git repo
 3. The working rule: when Claude makes the same mistake twice, the correction goes under "Things Claude gets wrong". `claude-md-management`'s `/revise-claude-md` applies it when installed.
 4. Do not copy the SDLC rules into CLAUDE.md. `.claude/rules/sdlc.md` already loads them.
 
+## review: REVIEW.md
+
+REVIEW.md tells reviewers what matters in this repository. `sdlc-reviewer` reads it in `/sdlc-deploy`, and so does the managed Code Review service; the local `/code-review` does not, so rules for every review belong in CLAUDE.md.
+
+1. Read CLAUDE.md, the CI config and recent review comments or reverts (`gh pr list --state merged`, `git log --grep revert -i`). Draft the file with the code owners, and grill the user on it in one round.
+2. Write `REVIEW.md` at the root, short, with these sections:
+   - `## What failure means here`: one line per area (for docs, "it lies"; for config, "it misroutes"), and which findings count as Important. Style is Nit at most.
+   - `## Nits`: report at most 5.
+   - `## Do not report`: generated files, lockfiles, vendored code, anything CI already enforces.
+   - `## Evidence`: every behavior claim cites `file:line`, not an inference from a name. The summary starts with a count and says "nothing to fix" when there is nothing.
+   - `## Always check`: the team rules to check on every change.
+   - `## Always human`: paths that always need a person to approve (auth, billing, installers, release config). `/sdlc-deploy` treats them as `high` risk, as it does CI workflows and `.claude/`.
+3. A subdirectory can have its own REVIEW.md, which adds rules for changes under it.
+4. The working rule: when review flags the same thing twice, move it to its source, a guardrail hook or lint rule if it must always hold, else CLAUDE.md or REVIEW.md.
+5. Once a month, read the outcomes in `sdlc/*/deploy.md`. Many `wrong` or `unimportant` outcomes in one class mean REVIEW.md should skip it or set a higher bar.
+
 ## policy-skill
 
 1. Pick one rule that is applied inconsistently today, such as a security standard, an API convention or a brand rule. It needs a named owner and a written source of truth; if either is missing, stop and ask.
@@ -77,7 +93,8 @@ Use it when this folder, whether a git repository or not, holds several git repo
 4. Make every reason useful. The reason on `ask` is shown to the person. The reason on `deny` is shown to Claude and must name the route to approval.
 5. In a non-interactive run nobody can answer `ask`, so it acts as a deny. Allow the pipeline path where the approved merge already is the approval.
 6. Hooks that must never be switched off belong in managed settings owned by an admin. Say so, but do not write them.
-7. Test each outcome (allow, ask, deny) with a sample payload and show the JSON.
+7. For pull requests, suggest branch protection on the default branch (the user turns it on): require a pull request and green checks, dismiss stale approvals when new commits are pushed, and require code owner review, with a `CODEOWNERS` file that covers the `## Always human` paths in REVIEW.md, CI workflows and `.claude/`.
+8. Test each outcome (allow, ask, deny) with a sample payload and show the JSON.
 
 ## evals: configuration regression suite
 
@@ -92,6 +109,7 @@ Use it when this folder, whether a git repository or not, holds several git repo
 3. Write `evals/run.sh`. For each case it checks out `from` in a temporary worktree, runs `claude -p "<prompt>"`, runs the checks, and prints PASS or FAIL. Do not use `--bare`: it skips CLAUDE.md, skills and hooks, which are what the suite tests.
 4. Run it in CI on a schedule and on pull requests that touch `CLAUDE.md`, `.claude/**` or `evals/**`. The user adds the API key as a CI secret. Gate merges on the pass rate.
 5. Every production incident adds a case. Replace cases that no longer tell good configurations from bad ones.
+6. Review cases test the reviewer. Each `evals/review/<name>.json` has `from` (the commit before the PR that caused an incident or revert), `to` (its last commit) and `expect`: the bug's `file:line` and class, confirmed by someone who knows that code, or an empty list for a PR known to be clean. `evals/run.sh` checks out `to` (not `from`) in a temporary worktree and runs `claude -p "Use the sdlc-reviewer agent in find mode on <from>..<to>"` and scores a hit when a finding names the expected file and line. Report recall, and false Important findings on clean cases. Rerun on every change to `sdlc-reviewer.md`, REVIEW.md or the model.
 
 ## pipeline: CI/CD
 

@@ -25,13 +25,14 @@ No code is written until someone could build the change from plan.md alone.
    - the steps in order, each citing the R# it serves, and marked `parallel-safe` when no other step touches its files;
    - a proof for every R#: a test file, a command, or a Playwright check;
    - the risks, with a rollback for each;
+   - the risk tier: `low` (docs, copy, additive changes behind a flag), `medium` (ordinary changes, sensitive areas such as caching, auth flows or prompts) or `high` (billing, security, data migrations, CI and release workflows, installers, anything under `## Always human` in REVIEW.md), with a one-line reason. Set by the change, not by who asks for it;
    - the alternatives you rejected, and why;
    - in workspace mode, paths that start with their repository folder, and a `## Merge order` section: the order in which the repositories merge and release, and why every state in between stays compatible.
 4. Interrogate the draft before showing it: what could it break, which step is riskiest, what is missing. Iterate until someone who never saw this conversation could implement it from the plan alone.
 5. Grill the user on the choices that are theirs.
 6. Run `sdlc-gatekeeper` on the draft (pass the plan text if plan.md is not written yet) and resolve its findings.
 7. If this session is in plan mode, present the plan with ExitPlanMode; in `solo` mode the user's approval there is the gate's yes. Otherwise write plan.md directly: the plan gate hook keeps code blocked either way.
-8. Write `sdlc/<slug>/plan.md`, finish the approval for the task's `gate_mode` (`.claude/rules/sdlc.md`), and commit it before any code changes.
+8. Write `sdlc/<slug>/plan.md` and set `risk:` in task.yaml, finish the approval for the task's `gate_mode` (`.claude/rules/sdlc.md`), and commit it before any code changes.
 9. End the phase as `.claude/rules/sdlc.md` says.
 
 ## plan.md
@@ -59,6 +60,8 @@ approved_at:
 - R1: <test file and test name, command, or Playwright check>
 
 ## Risks and rollback
+Risk tier: <low | medium | high>, because <reason>.
+
 - <risk> (spec concern <n>). Rollback: <how>.
 
 ## Merge order (workspace mode)

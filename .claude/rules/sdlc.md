@@ -26,7 +26,7 @@ This project runs changes through the AI-native SDLC skills. A task lives in `sd
 Before any approval, run the `sdlc-gatekeeper` agent on the phase and resolve what it reports.
 
 - `solo`: ask the user to approve, as a grilling question that includes the gatekeeper's verdict. Only after an explicit yes, set `status: accepted`, `approved_by: <git config user.name>` and `approved_at: <YYYY-MM-DD>`.
-- `auto`: when the gatekeeper returns PASS, set `status: accepted` and `approved_by: sdlc-gatekeeper` yourself. Ask the user only about decisions that are theirs.
+- `auto`: when the gatekeeper returns PASS, set `status: accepted` and `approved_by: sdlc-gatekeeper` yourself. Ask the user only about decisions that are theirs. Exception: a `medium` or `high` risk task merges only after the user's explicit yes (`/sdlc-deploy` step 7).
 - `strict`: never set `accepted` on your own. Commit the artifact as `draft`, tell the user who must accept it (intent and spec: the product owner; plan: the engineer, or a tech lead for higher-risk changes), and print `.claude/sdlc-scripts/next.sh <slug>` for them to run once it is accepted; skip the rest of "Ending a phase". For deploy, the code owner's approving review is the acceptance: when `gh pr view <n> --json reviewDecision` shows `APPROVED`, set deploy.md to `accepted` with `approved_by: <reviewer>`.
 
 ## Ending a phase

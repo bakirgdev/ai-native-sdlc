@@ -29,7 +29,7 @@ Above the `log` tier, writing and committing that intent is the one write always
    - `diagnose`: read-only. Delegate to the `sdlc-diagnoser` agent. No edits, deploys or PRs.
    - `propose`: act only through the routes bands.yaml lists, such as opening a PR into review or triggering a pre-approved runbook like `rollback-deploy`.
 3. Write the finding as a new task with `author: monitoring agent (<metric>, <tier>)`. When a runbook ran, add `## Action already taken` with what it reported.
-4. When the fix ships, its test phase adds an eval for this class of incident.
+4. When the fix ships, its test phase adds an eval for this class of incident, and a review case (`/sdlc-setup evals`) when the diagnosis names the PR that caused it.
 
 Process metrics work the same way. A drift in PR cycle time produces a report for engineering leadership instead of an intent.
 
