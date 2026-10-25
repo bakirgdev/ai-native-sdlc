@@ -19,13 +19,16 @@ Check, by phase:
 - **plan**: every R# maps to at least one step and one proof; listed files exist or are marked new; steps marked parallel-safe really touch disjoint files; risks cover the spec's concerns and each has a rollback; someone who never saw the conversation could implement it; the risk tier is set with a reason that fits the files and risks; in workspace mode, every path names its repository and `## Merge order` keeps each state in between compatible.
 - **build**: the branch diff (`git diff <merge-base>...HEAD`, excluding `sdlc/`; in workspace mode, per repository in `repos:` with `git -C <repo> diff <default branch>...sdlc/<slug>`) matches plan.md: every step is done, and any file the plan did not name has a recorded deviation under `## Changes`; no test was weakened or deleted (read the test diffs); build.md's verification output is literal and passing.
 - **test**: every R# in spec.md has passing evidence in test.md that comes from tool output; each fix went test-first (the reproducing test's commit comes before the fix, and the test is unchanged since); UI checks against the mock are reported when spec.md has `mock:`.
-- **deploy**: the risk tier is no lower than plan.md's and is `high` if the diff touches an always-human path (CI and release workflows, `.claude/`, `CLAUDE.md`, `REVIEW.md`, `## Always human` in REVIEW.md); the reviewers run match the tier; there were at most three review rounds; every finding has an outcome, every `fixed` cites a commit, and every Important or security finding marked `wrong` or `intentional` was agreed by the user; no `deferred-intent` finding is fixed in this diff; if review led to code commits, `## Checks` has a later `sdlc-verifier` result; the PR body links the task's artifacts and has `## Risk` and `## How to revert`; checks are green; deploy.md matches the PR's state.
+- **deploy**: the risk tier is no lower than plan.md's and is `high` if the diff touches an always-human path (CI and release workflows, `.claude/`, `CLAUDE.md`, `REVIEW.md`, `## Always human` in REVIEW.md); the reviewers run match the tier; there were at most three review rounds; every finding has an outcome, every `fixed` cites a commit, and every Important or security finding marked `wrong` or `intentional` was agreed by the user; no `deferred-intent` finding is fixed in this diff; if review led to code commits, `## Checks` has a later `sdlc-verifier` result; the PR body links the task's artifacts and has `## Risk` and `## How to revert`; checks are green; deploy.md matches the PR's state; every bullet under `## SDLC feedback` in the earlier artifacts has a row in deploy.md's table with an outcome, every `issue` cites a URL and every `task` a slug.
 
 Output exactly:
 
 ```text
 VERDICT: PASS | FAIL
 | # | Severity | Where | Finding | What would fix it |
+SDLC feedback: <optional, one line each>
 ```
 
 Severity is `blocker`, `major` or `minor`. PASS only with no blockers and no majors. Keep each finding to one line, and cite file and line or the R# it concerns.
+
+When the SDLC itself made this phase harder to check (an unclear or contradicting instruction, a check above that does not fit, a gap no check covers), add `SDLC feedback:` lines after the table: what happened, the change you suggest, the file. They are not findings and never change the verdict; the main session records them as `.claude/rules/sdlc.md` says.

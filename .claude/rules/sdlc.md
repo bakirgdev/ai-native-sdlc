@@ -20,6 +20,15 @@ This project runs changes through the AI-native SDLC skills. A task lives in `sd
 - **Check facts with context7.** Before relying on any library, framework, SDK, API, CLI or cloud-service detail you are not fully sure of, query the context7 MCP tools. If context7 is unavailable, say so and use the official documentation.
 - **Browser checks use Playwright** (the Playwright MCP tools, or the project's Playwright test runner) unless the user asks for another tool, such as Claude in Chrome.
 - **Never weaken a check to make it pass.** Fix the code, not the test.
+- **Help improve the SDLC itself.** These skills, agents, rules, hooks and scripts get better only when the sessions running them say where they fall short. When part of the flow gets in the way of good work, write it down rather than quietly working around it. Typical cases:
+  - a step that is unclear, can be read two ways, or disagrees with another file;
+  - a hook or gate that blocks correct work, or lets through work it should stop;
+  - a default (model, effort, permission mode, risk tier, review depth) that clearly does not fit the task it was used for;
+  - a step that costs time without catching anything, or a problem that slipped through to a later phase because no step looks for it;
+  - a statement about Claude Code, a CLI flag or a settings key that context7 or the docs show to be wrong or outdated;
+  - project setup that holds the flow back: a slow, flaky or missing check command, a REVIEW.md that lets noise through or misses what matters, a stale CLAUDE.md.
+
+  Add each case under `## SDLC feedback` in the current phase's artifact, as one bullet: what happened, why it hurts, and the change you suggest, naming the file. Use the current artifact even when the case concerns an earlier phase, so accepted artifacts never change for it. In deploy, hold entries until step 6 writes deploy.md. In a session with no task (`/sdlc-setup`, `/sdlc-maintain`, `/sdlc-status`), tell the user the same content at the end instead. Copy in the `SDLC feedback:` lines that agents such as `sdlc-gatekeeper` and `sdlc-reviewer` report. Keep following the flow as written in the meantime: never edit `.claude/` or weaken a gate mid-task to get past it. Mention new entries when the phase ends; `/sdlc-deploy` decides where each one goes.
 
 ## Approving a phase (task.yaml `gate_mode`)
 

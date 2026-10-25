@@ -44,3 +44,5 @@ Start with one line: `<t> findings: <i> Important, <n> Nit, <p> Pre-existing`, o
 ```
 
 In verify mode, add a `Verdict` column after `#`.
+
+When REVIEW.md or these instructions made the review worse (a rule that invites noise, a failure mode this repository has but REVIEW.md does not name, an instruction that can be read two ways), add `SDLC feedback: <what happened, the change you suggest, the file>` lines after the table. They are not findings.

@@ -80,7 +80,7 @@ From an empty `.claude/` to a merged change. Run every step in the project folde
 | 3. Plan | `/sdlc-plan <slug>` | Files, ordered steps, a proof per R#, risks with rollback, and the risk tier (`low`, `medium`, `high`) | Challenge the plan and accept it. Code stays blocked until you do |
 | 4. Build | `/sdlc-build <slug>` | Test-first implementation, parallel steps in worktrees; every code commit runs the check command | Answer questions if scope changes |
 | 5. Test | `/sdlc-test <slug>` | A fresh context proves each R# with tool output and fixes gaps test-first | Accept the evidence |
-| 6. Deploy | `/sdlc-deploy <slug>` | Raises the risk tier if the diff touches risky paths, reviews the branch at that depth (at most three rounds), fixes confirmed findings, opens the PR with Risk and How to revert, works CI and comments | Decide on findings Claude calls wrong or intentional. Say yes to the merge for `medium` and `high` risk |
+| 6. Deploy | `/sdlc-deploy <slug>` | Raises the risk tier if the diff touches risky paths, reviews the branch at that depth (at most three rounds), fixes confirmed findings, opens the PR with Risk and How to revert, works CI and comments | Decide on findings Claude calls wrong or intentional, and where each SDLC feedback entry goes. Say yes to the merge for `medium` and `high` risk |
 | 7. After release | `/sdlc-maintain triage` | Lists agent-written intents: alerts, scans, and pre-existing bugs found in review | Fix now, schedule or dismiss each |
 
 Every phase ends by printing the next command (or starting it, in autonomous mode). `/sdlc-status` shows where every task stands. Details for each part follow below.
@@ -135,6 +135,18 @@ Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions
 - **Every finding gets an outcome** in deploy.md (`fixed`, `wrong`, `intentional`, `unimportant`, `deferred-intent`), which shows how noisy review is.
 - **Merge by tier.** `low` follows `pr:`. `medium` and `high` always need your yes, even with `pr: auto` or `gate_mode: auto`.
 - `/sdlc-setup review` writes `REVIEW.md`: what failure means in your repository, a nit cap, paths to skip, evidence rules and always-human paths. The managed Code Review service reads it too; its PR comments are handled like any other finding. `/sdlc-setup gates` suggests the branch protection that makes always-human paths binding, and `/sdlc-setup evals` can score the reviewer on past incidents.
+
+### Improving the SDLC
+
+The flow is meant to keep getting better from its own use. When a session runs into a part of it that gets in the way (an unclear or contradicting step, a gate that blocks correct work or lets wrong work through, a default that does not fit, a step that catches nothing, an outdated claim about Claude Code, a noisy REVIEW.md or a flaky check command), it does not quietly work around it. It adds a bullet under `## SDLC feedback` in that phase's artifact: what happened, why it hurts, and the suggested change. The gatekeeper and reviewer report theirs too.
+
+`/sdlc-deploy` collects every bullet, adds one when review was noisy (two or more findings of one class ended `wrong` or `unimportant`), and asks where each goes:
+
+- `issue`: a flaw in the SDLC files, filed on this repository (or your fork) with `gh issue create`. Claude shows the draft first, with project-private details left out, and files it only after your yes;
+- `task`: something your project owns, such as its check command, REVIEW.md or CLAUDE.md, created as a new intent for `/sdlc-maintain triage`;
+- `dropped`, with a reason.
+
+The flow is never changed mid-task to get past a problem: the session follows it as written and records the suggestion.
 
 ### Status
 
@@ -231,6 +243,7 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
 11. **One-time setup.** The playbook's one-time plays (CLAUDE.md, REVIEW.md, policy skills, guardrails, approval gates, evals, CI/CD, control bands) live in `/sdlc-setup`, so each phase skill stays one linear workflow.
 12. **Workspace mode.** One folder holding several repositories, so one task can change several repositories at once, each on its own `sdlc/<slug>` branch.
 13. **Risk-scaled code review.** Based on [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/). See "Code review" above.
+14. **SDLC feedback.** Every session records where the flow itself fell short, and deploy turns each entry into an issue upstream, a project task, or a dropped note. See "Improving the SDLC" above.
 
 ## Limitations
 
