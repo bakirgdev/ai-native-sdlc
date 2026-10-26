@@ -1,7 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "SDLC_VERIFY": ""
+    "SDLC_VERIFY": "",
+    "SDLC_COMPACT_SUGGEST": "200000",
+    "SDLC_COMPACT_REQUIRE": "350000"
   },
   "permissions": {
     "allow": [
@@ -44,6 +46,15 @@
             "timeout": 900
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/sdlc-context-gate.sh"
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -53,6 +64,16 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/sdlc-scripts/status.sh --context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/sdlc-context-gate.sh"
           }
         ]
       }

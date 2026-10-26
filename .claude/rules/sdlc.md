@@ -55,6 +55,21 @@ When `.claude/sdlc-workspace.yaml` exists, this folder holds several git reposit
 - Each repository's own CLAUDE.md owns its toolchain, commands and release process; read it before changing that repository.
 - Each repository's check command is in `.claude/sdlc-workspace.yaml` as `<repo>: <command>`, run inside that repository. It replaces `$SDLC_VERIFY`.
 
-## Context compaction
+## Context and compaction
 
-Claude cannot run `/compact` or `/clear`; long phases are compacted automatically. When summarizing, keep the task slug and phase, `gate_mode` and `run_mode`, open questions with their recommended answers, failing checks, and anything not yet written to the artifacts. After compaction, re-read task.yaml and the current artifact. A SessionStart hook re-injects the task state after compaction and on resume.
+Answers get less reliable as the context grows, long before the window is full. Claude cannot run `/compact` or `/clear`: it recommends them at the right moment and the user runs them. The context gate hook (`.claude/hooks/sdlc-context-gate.sh`) measures the session and says when, in every session in this project:
+
+- **From `SDLC_COMPACT_SUGGEST` tokens (default 200K)**, end a reply with one line naming the best next move:
+  - the work in this session continues: `/compact <focus>`, with the focus drafted;
+  - the phase's artifact is accepted: the handoff command, because the next phase starts in a fresh session anyway;
+  - the next request is unrelated: `/clear` or a new session.
+- **From `SDLC_COMPACT_REQUIRE` tokens (default 350K)**, finish only small work, such as completing the artifact, the gatekeeper run and the handoff. About 40K tokens later, tools pause until the user compacts, except what saving the task's state and ending a phase need: `sdlc/` task files, the `sdlc-gatekeeper` agent, `git add sdlc/...`, `git commit`, `next.sh` and `status.sh`. Save the unfinished state and ask for `/compact`. If the user replies with anything else, work resumes for about 100K tokens.
+- Compact at a natural break, never in the middle of a step. If the next work does not need this session's history, a new session beats compacting.
+- On a task, write the unfinished state to the current artifact before asking: what is done, the next step, open questions with recommended answers, failing checks. Files outlive any summary.
+- A good focus names the task slug and phase, the next step, and decisions not yet written down, for example `/compact keep task login-rate-limit, build step 4 of 6, the retry decision`.
+- Background sessions have no one to type `/compact`: `next.sh` starts them with `--autocompact` at the require size, and the gate never pauses them.
+- Both sizes are set in `.claude/settings.json` under `env`; `0` turns a stage off.
+
+### Compact instructions
+
+When summarizing, keep the task slug and phase, `gate_mode` and `run_mode`, open questions with their recommended answers, failing checks, and anything not yet written to the artifacts. After compaction, re-read task.yaml and the current artifact. A SessionStart hook re-injects the task state after compaction and on resume.

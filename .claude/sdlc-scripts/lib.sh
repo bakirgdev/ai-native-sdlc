@@ -128,6 +128,34 @@ sdlc_task_field() {
   sdlc_task_file "$1" "$2" "$3" | sdlc_field_in "$4" "$_md"
 }
 
+# Prints the main session's context size in tokens: the input, cache read and
+# cache write tokens of its last model call, which the next call sends again.
+# Prints 0 after a compaction until the next call, and nothing when unknown.
+# The transcript is written asynchronously, so the newest call may be missing.
+# Its format is undocumented; this reads what Claude Code 2.1 writes.
+# Needs jq. Usage: sdlc_context_tokens <transcript_path>
+sdlc_context_tokens() {
+  tail -n 300 "$1" 2>/dev/null |
+    grep -E '"type":"assistant"|"subtype":"compact_boundary"' |
+    jq -R -r 'fromjson? | select(.isSidechain != true) |
+      if .type == "system" and .subtype == "compact_boundary" then 0
+      elif .type == "assistant" and .message.usage then .message.usage |
+        (.input_tokens // 0) + (.cache_read_input_tokens // 0) + (.cache_creation_input_tokens // 0) |
+        select(. > 0)
+      else empty end' |
+    tail -n 1
+}
+
+# Prints the context size of the session's first model call: system prompt,
+# tools, CLAUDE.md and the first prompt, which no compaction can remove.
+# Usage: sdlc_context_baseline <transcript_path>
+sdlc_context_baseline() {
+  grep -m 5 '"type":"assistant"' "$1" 2>/dev/null |
+    jq -R -r 'fromjson? | select(.type == "assistant" and .isSidechain != true and .message.usage) |
+      .message.usage | (.input_tokens // 0) + (.cache_read_input_tokens // 0) + (.cache_creation_input_tokens // 0)' |
+    head -n 1
+}
+
 # First phase whose artifact is not accepted, or "done".
 # Usage: sdlc_current_phase <root> <slug>
 sdlc_current_phase() {

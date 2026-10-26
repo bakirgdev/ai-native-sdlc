@@ -122,7 +122,21 @@ Before every approval the `sdlc-gatekeeper` agent checks the phase's artifact ag
 | `manual` (default) | You run the printed command in a new terminal. |
 | `autonomous` | The finished phase starts the next one as a background session (`claude --bg`), named `<slug>-<phase>`. You are pulled in only for questions and approvals. `claude agents` lists the sessions, and "Needs input" means one is waiting for you; `claude attach <slug>-<phase>` opens it. Claude Code's `inputNeededNotifEnabled` setting can push that to your phone. A phase set to `bypassPermissions` is never started automatically. |
 
-Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions instead of clearing one. Within a phase, Claude Code compacts automatically when needed. The always-loaded rule says what a summary must keep, and a SessionStart hook re-injects the task state after compaction and on resume.
+Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions instead of clearing one. Within a phase, the context gate below decides when compacting pays off. The always-loaded rule says what a summary must keep, and a SessionStart hook re-injects the task state after compaction and on resume.
+
+### Context and compaction
+
+Answers get less reliable as the context grows, and current models only auto-compact near their 1M-token limit, long after quality has dropped. The context gate hook watches every session in the project and brings `/compact` in at the right time, while still preferring a fresh session when one is close.
+
+| Context size | What happens |
+|---|---|
+| `SDLC_COMPACT_SUGGEST` (default 200K) | Claude ends its reply with the best next move: `/compact <focus>` with a drafted focus when the work continues, the handoff when the phase is accepted, `/clear` or a new session when the next request is unrelated. Repeated every 50K. |
+| `SDLC_COMPACT_REQUIRE` (default 350K) | Claude finishes only small work (the artifact, the gatekeeper run, the handoff) and saves the task's state to its artifact. |
+| 40K past that | Tools pause, except what saving the task's state and ending a phase need (`sdlc/` task files, the `sdlc-gatekeeper` agent, `git add sdlc/...`, `git commit`, `next.sh`, `status.sh`). Claude asks you to run `/compact <focus>`. Any other reply resumes work for about 100K tokens, so the pause is never a dead end. |
+
+- **Sizes are total context tokens**, read from the session transcript (the input, cache read and cache write tokens of the last model call). Nothing happens while compacting would free less than 100K tokens, so a large fixed context (many skills or plugins) does not trigger it.
+- **Why these numbers:** Anthropic publishes no threshold, only that accuracy and recall degrade as tokens grow. Public long-context results for recent Claude models are densest at 256K and vary widely between models, with little above that. 200K is a nudge, 350K a precaution. Tune both in `.claude/settings.json` under `env`; `0` turns a stage off.
+- **Subagents** are never paused. **Background sessions** are never paused, since no one may be there to type `/compact`; `next.sh` starts them with `--autocompact` at the require size instead.
 
 ### Code review
 
@@ -192,8 +206,9 @@ Always start Claude in `work/`. The gates check every repository there: a code c
 | `rules/sdlc-artifacts.md` | Loaded only when Claude touches `sdlc/**`: task.yaml keys, frontmatter, status values, how accepted artifacts change. |
 | `hooks/sdlc-plan-gate.sh` | On a `sdlc/<slug>` branch, blocks edits outside `sdlc/` until plan.md is accepted. |
 | `hooks/sdlc-commit-gate.sh` | On a `sdlc/<slug>` branch, blocks code commits until plan.md is accepted and `$SDLC_VERIFY` passes. Commits of test files alone pass, so a failing test can be committed before its fix. It looks at every changed and untracked file, so keep the tree clean. |
+| `hooks/sdlc-context-gate.sh` | In every session, asks Claude to recommend `/compact`, the handoff or `/clear` once the context is large, and pauses tools past a hard limit until you compact. See "Context and compaction". |
 | `sdlc-scripts/next.sh`, `sdlc-scripts/status.sh`, `sdlc-scripts/lib.sh` | The handoff command (prints or launches), the status report, shared helpers. |
-| `settings.json` | The hooks above, `SDLC_VERIFY`, the plugin list, and pre-approval for the read-only `status.sh` and `next.sh --defaults`. Running `next.sh` for a handoff goes through normal permission checks, so a background session is never started without auto mode's classifier or your approval. Project-local only; nothing touches `~/.claude`. |
+| `settings.json` | The hooks above, `SDLC_VERIFY`, the context gate sizes (`SDLC_COMPACT_SUGGEST`, `SDLC_COMPACT_REQUIRE`), the plugin list, and pre-approval for the read-only `status.sh` and `next.sh --defaults`. Running `next.sh` for a handoff goes through normal permission checks, so a background session is never started without auto mode's classifier or your approval. Project-local only; nothing touches `~/.claude`. |
 
 Want the SDLC rules inside CLAUDE.md instead of a rule file? Paste `rules/sdlc.md` into it as a section and delete the file.
 
@@ -245,6 +260,7 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
 13. **Risk-scaled code review.** Based on [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/). See "Code review" above.
 14. **SDLC feedback.** Every session records where the flow itself fell short, and deploy turns each entry into an issue upstream, a project task, or a dropped note. See "Improving the SDLC" above.
 15. **Attribution.** Commits, PRs and issues keep Claude Code's default attribution, unless your CLAUDE.md, memory or chat asks for none; then it is left out everywhere.
+16. **Context gate.** `/compact` is recommended from 200K tokens and enforced past 350K, instead of waiting for auto-compact near 1M. See "Context and compaction" above.
 
 ## Limitations
 
@@ -255,6 +271,7 @@ These are my choices on top of the playbook, recorded so the flow can be copied 
   - The check commands live in files Claude can edit (`SDLC_VERIFY` in `.claude/settings.json`, `.claude/sdlc-workspace.yaml`), like the tests themselves. Review changes to them in the diff.
   - In `solo` and `auto` modes the agent records the approval. In `strict` mode the hard boundary is branch protection with a code owner's review.
 - **Starting a phase with a skill as the first prompt** (`claude "/sdlc-spec x"`) was verified with background sessions (`claude --bg`) and `claude -p`.
+- **The context gate reads the session transcript**, whose format Claude Code does not document. If a release changes it, the gate measures nothing and stays silent rather than blocking. It cannot tell a `claude -p` run from an interactive session, so a print-mode run that grows past the limit stops at the pause.
 - **Session transcripts expire** after `cleanupPeriodDays` (30 days by default). Raise it if you rely on backtracking.
 - **`grilling` is a third-party skill** and updates upstream.
 

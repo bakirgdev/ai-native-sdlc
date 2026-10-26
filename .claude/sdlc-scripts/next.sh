@@ -147,12 +147,20 @@ if [ "$print" -eq 1 ] || [ "$(tf run_mode)" != autonomous ] || [ "$perm" = bypas
 fi
 
 cd "$root" || exit 1
+# No one is there to run /compact, so auto-compact takes over at the size where
+# the context gate asks for it in interactive sessions (instead of near 1M).
+compact_args=
+r=${SDLC_COMPACT_REQUIRE:-350000}
+case $r in
+  '' | *[!0-9]* | 0?*) ;;
+  *) [ "$r" -ge 100000 ] && [ "$r" -le 1000000 ] && compact_args="--autocompact $r" ;;
+esac
 echo "Starting the $phase phase in the background (model $model, effort $effort, permission $perm)."
 # Sessions started from inside Claude Code are hidden from `claude agents` unless
 # these markers are cleared.
 # shellcheck disable=SC2086
 env -u CLAUDE_CODE_CHILD_SESSION -u CLAUDECODE \
-  claude --bg -n "$name" --model "$model" --effort "$effort" $perm_args "$prompt"
+  claude --bg -n "$name" --model "$model" --effort "$effort" $perm_args $compact_args "$prompt"
 rc=$?
 [ "$rc" -eq 0 ] && echo "Follow it with: claude agents (\"Needs input\" means it is waiting for you), or claude attach $(q "$name")"
 exit "$rc"
