@@ -43,7 +43,8 @@ for v in "$suggest" "$require"; do
   esac
 done
 
-dir=${TMPDIR:-/tmp}/sdlc-context-gate
+# Per-user state, never a shared /tmp where others could plant or swap files.
+dir=${XDG_STATE_HOME:-$HOME/.local/state}/sdlc-context-gate
 state=$dir/$sid
 tokens=$(sdlc_context_tokens "$transcript")
 low=$suggest
@@ -71,9 +72,10 @@ suggested=$(num "$suggested") allowed=$(num "$allowed")
 blocked=$(num "$blocked") warned=$(num "$warned")
 # Hooks for parallel tool calls run at the same time: replace the file whole.
 save() {
-  mkdir -p "$dir" &&
-    printf '%s %s %s %s\n' "$suggested" "$allowed" "$blocked" "$warned" >"$state.$$" &&
-    mv -f "$state.$$" "$state"
+  mkdir -p "${dir%/*}" && { [ -d "$dir" ] || mkdir -m 700 "$dir"; } &&
+    _tmp=$(mktemp "$state.XXXXXX") &&
+    printf '%s %s %s %s\n' "$suggested" "$allowed" "$blocked" "$warned" >"$_tmp" &&
+    mv -f "$_tmp" "$state"
 }
 k() { echo "$(($1 / 1000))K"; }
 context() {
