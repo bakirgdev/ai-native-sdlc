@@ -22,7 +22,7 @@ The work is checked by a context that did not write it, and every claim ends up 
 2. Run the `sdlc-verifier` agent with the slug. It runs `$SDLC_VERIFY` (in workspace mode, each task repository's check command), each proof in plan.md including any check across repositories, and, when spec.md has a `mock:`, a Playwright comparison against the mock. It reports evidence and never fixes anything.
 3. When `pr-review-toolkit` is installed, also run its `pr-test-analyzer` agent (coverage gaps against the R# list) and its `silent-failure-hunter` agent (swallowed errors) on the branch diff.
 4. Fix every failure or gap test-first:
-   1. The `sdlc-test-writer` agent writes a test that reproduces it. Confirm the test fails for the expected reason, and quote the failure line.
+   1. The `sdlc-test-writer` agent writes a test that reproduces it. Confirm the test fails for the expected reason, and quote the failure line. When the changed file has no test harness, record a probe run instead (a command and its literal output before the fix), skip 2 and 3, and quote the same probe's output after the fix.
    2. Commit that test on its own: `test(<slug>): reproduce <issue>`.
    3. Fix the code without touching that test. Prove it: `git diff <test-commit> -- <test file>` must print nothing.
    4. Run the full verify command.

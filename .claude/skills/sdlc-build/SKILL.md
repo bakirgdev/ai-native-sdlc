@@ -52,7 +52,13 @@ approved_at:
 - Step 1: <what>, commits <hash>, <hash>
 
 ## Deviations from the plan
-- <none, or what changed and why; also recorded in plan.md under Changes>
+- None, or see plan.md `## Changes`
+
+## Requirement proofs
+### R1
+```text
+<literal output of R1's proof from plan.md>
+```
 
 ## Verification
 ```text
