@@ -21,7 +21,7 @@ Requirements and design are written in one pass, with the project's policies app
 1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. intent.md must be `accepted`; otherwise stop and report its status.
 2. Read intent.md, CLAUDE.md and the code the change touches. Use `Explore` subagents (or `feature-dev:code-explorer` when installed) for wide reads. List the policy skills available to you (security, brand, UX, API conventions); if there are none, record that as a concern. In workspace mode, read the CLAUDE.md of every repository in `repos:`, and describe the contracts between them (APIs, shared types, events) in the design.
 3. Research before asking: check every library, API and platform assumption with context7.
-4. Grill the user on the design choices that are theirs, in one round.
+4. Grill the user on the design choices that are theirs, in one round (with `run_mode: autonomous`, as `.claude/rules/sdlc.md` says).
 5. Write `sdlc/<slug>/spec.md` from the template:
    - number the requirements R1, R2, ... and make each one testable;
    - give every constraint in intent.md a row in the constraint table;

@@ -120,7 +120,7 @@ Before every approval the `sdlc-gatekeeper` agent checks the phase's artifact ag
 | Mode | How the next phase starts |
 |---|---|
 | `manual` (default) | You run the printed command in a new terminal. |
-| `autonomous` | The finished phase starts the next one as a background session (`claude --bg`), named `<slug>-<phase>`. You are pulled in only for questions and approvals. `claude agents` lists the sessions, and "Needs input" means one is waiting for you; `claude attach <slug>-<phase>` opens it. Claude Code's `inputNeededNotifEnabled` setting can push that to your phone. A phase set to `bypassPermissions` is never started automatically. |
+| `autonomous` | The finished phase starts the next one as a background session (`claude --bg`), named `<slug>-<phase>`, in the task's worktree `.claude/worktrees/<slug>` on branch `sdlc/<slug>` (single-repo mode; the root checkout is detached if it held that branch). Choices that are not yours are recorded in the artifacts with their recommended answer instead of asked. You are pulled in only for questions and approvals. `claude agents` lists the sessions, and "Needs input" means one is waiting for you; `claude attach <slug>-<phase>` opens it. Claude Code's `inputNeededNotifEnabled` setting can push that to your phone. A phase set to `bypassPermissions` is never started automatically. |
 
 Claude cannot run `/clear` or `/compact` itself, so autonomy uses fresh sessions instead of clearing one. Within a phase, the context gate below decides when compacting pays off. The always-loaded rule says what a summary must keep, and a SessionStart hook re-injects the task state after compaction and on resume.
 

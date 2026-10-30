@@ -147,6 +147,23 @@ if [ "$print" -eq 1 ] || [ "$(tf run_mode)" != autonomous ] || [ "$perm" = bypas
 fi
 
 cd "$root" || exit 1
+# Background sessions must edit inside a linked worktree, so single-repo tasks run
+# in one per-task worktree on sdlc/<slug>, where the hooks and subagents see the
+# task branch. Later phases start from inside it and reuse it.
+if ! sdlc_workspace; then
+  common=$(git rev-parse --path-format=absolute --git-common-dir) || exit 1
+  wt="${common%/.git}/.claude/worktrees/$slug"
+  if [ ! -d "$wt" ]; then
+    # git refuses a branch that is checked out elsewhere; detaching changes no files.
+    if [ "$(sdlc_branch_slug "$root")" = "$slug" ]; then
+      git switch --quiet --detach || exit 1
+      echo "Detached $root from sdlc/$slug so the task worktree can use the branch."
+    fi
+    git worktree add --quiet "$wt" "sdlc/$slug" || exit 1
+  fi
+  cd "$wt" || exit 1
+  echo "Task worktree: $wt"
+fi
 # No one is there to run /compact, so auto-compact takes over at the size where
 # the context gate asks for it in interactive sessions (instead of near 1M).
 compact_args=

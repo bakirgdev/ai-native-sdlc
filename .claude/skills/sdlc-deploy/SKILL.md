@@ -52,7 +52,7 @@ The agent takes the change up to the merge gate. Who passes that gate depends on
    - Workspace mode: merge in the order of `## Merge order` in plan.md.
    Never bypass branch protection or required reviews.
 8. For each `deferred-intent` finding, create a new task as `/sdlc-maintain` describes, with `author: review agent (<slug>)` and the finding as evidence, so `/sdlc-maintain triage` picks it up. Do the same for each SDLC feedback entry with outcome `task`, with `author: sdlc feedback agent (<slug>)`. Switch back to this task's branch after.
-9. After each merge, follow the repository's documented release process (its CLAUDE.md, CONTRIBUTING or release workflow): propose the version, then tag or release, and watch the pipeline it starts. Creating tags and releases is visible to others: ask first unless `pr: auto` and the risk is `low`. If the changed service has no control bands yet, suggest `/sdlc-setup bands`. Ask before deleting the branch. Report the task complete and show `.claude/sdlc-scripts/status.sh <slug>`.
+9. After each merge, follow the repository's documented release process (its CLAUDE.md, CONTRIBUTING or release workflow): propose the version, then tag or release, and watch the pipeline it starts. Creating tags and releases is visible to others: ask first unless `pr: auto` and the risk is `low`. If the changed service has no control bands yet, suggest `/sdlc-setup bands`. Ask before deleting the branch. If the task has a worktree (`.claude/worktrees/<slug>`), give the user `git worktree remove .claude/worktrees/<slug>` to run from the root checkout after this session ends, before the branch is deleted. Report the task complete and show `.claude/sdlc-scripts/status.sh <slug>`.
 
 ## deploy.md
 
