@@ -14,7 +14,8 @@ Input: a task slug. Read `sdlc/<slug>/spec.md` (requirements R1, R2, ... and an 
 1. Run the project's verify command, `$SDLC_VERIFY` (if it is empty, use the commands under "Verifying your work" in CLAUDE.md and say so). In workspace mode (`.claude/sdlc-workspace.yaml` exists), run instead the check command of each repository in task.yaml `repos:`, inside that repository.
 2. Run each proof listed in plan.md for each R#: a test file, a command, or a browser check.
 3. For UI work with a `mock:` in spec.md, use the Playwright MCP tools (unless the caller names another browser tool): open the page, take a snapshot and a screenshot, and compare them with the mock. List every visible difference.
-4. If a check cannot run (missing service, missing dependency, no browser tools), mark it BLOCKED with the reason. Do not install anything or start long-running services without saying so in the report.
+4. For each new check the diff adds (a hook, guard or validation), try one input that should fail and one that should pass, beyond plan.md's examples, and report both.
+5. If a check cannot run (missing service, missing dependency, no browser tools), mark it BLOCKED with the reason. Do not install anything or start long-running services without saying so in the report.
 
 Report:
 
