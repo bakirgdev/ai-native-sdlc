@@ -19,16 +19,16 @@ The agent takes the change up to the merge gate. Who passes that gate depends on
 ## Steps
 
 1. Pick the task: the slug from the input, else the current `sdlc/<slug>` branch, else ask which one from the table above. Switch to its branch. test.md must be `accepted`.
-2. Set the risk tier. Start from `risk:` in task.yaml (set by the plan; `medium` if missing). Raise it to `high` when the branch diff touches a path that always needs a human: CI and release workflows (`.github/workflows/` and the like), `.claude/`, `CLAUDE.md`, `REVIEW.md`, and every path under `## Always human` in REVIEW.md. The tier only goes up. Record it in task.yaml with a one-line reason in deploy.md.
+2. Set the risk tier. Start from `risk:` in task.yaml (set by the plan; `medium` if missing). Raise it to `high` when the branch diff touches a path that always needs a human: CI and release workflows (`.github/workflows/` and the like), `.claude/`, `CLAUDE.md`, `AGENTS.md` and any nested agent context file, `REVIEW.md`, and every path under `## Always human` in REVIEW.md. The tier only goes up. Record it in task.yaml with a one-line reason in deploy.md.
 3. Review the branch before pushing, in rounds of at most three. Depth follows the tier:
    - `low`: the `sdlc-reviewer` agent in `find` mode.
    - `medium`: `sdlc-reviewer`, plus `/code-review high` and `/security-review`.
    - `high`: `sdlc-reviewer` with model opus, plus `/code-review max` and `/security-review`.
 
-   Give `sdlc-reviewer` the slug, the diff range (`<default branch>...HEAD`) and nothing about how the code was written. Run `/code-review` and `/security-review` on the committed branch, with no target, which reviews the current branch's changes; in workspace mode, run `sdlc-reviewer` per repository in `repos:` and give `/code-review` each repository's path as its target. `/code-review` reads CLAUDE.md but not REVIEW.md, which is why `sdlc-reviewer` always runs. Rate every security finding Important. Then send the Important and Pre-existing findings from all reviewers to one fresh `sdlc-reviewer` in `verify` mode, and keep only what it confirms.
+   Give `sdlc-reviewer` the slug, the diff range (`<default branch>...HEAD`) and nothing about how the code was written. Run `/code-review` and `/security-review` on the committed branch with a clean tree (`git status --porcelain` prints nothing), because their finders may run git in this checkout, with no target, which reviews the current branch's changes; in workspace mode, run `sdlc-reviewer` per repository in `repos:` and give `/code-review` each repository's path as its target. `/code-review` reads CLAUDE.md but not REVIEW.md, which is why `sdlc-reviewer` always runs. Rate every security finding Important. Then send the Important and Pre-existing findings from all reviewers to one fresh `sdlc-reviewer` in `verify` mode, and keep only what it confirms.
 
    Handle each confirmed finding, and record its outcome in deploy.md:
-   - Important or security: fix it test-first, as in `/sdlc-test`, covering every instance of its class. Outcome `fixed`, citing the commit.
+   - Important or security: fix it test-first, as in `/sdlc-test`, covering every instance of its class. Outcome `fixed`, citing the commit. For a script fixed against a probe, also quote the probe's output before and after; for a docs-only finding, a quoted read or grep of the corrected text is the proof.
    - Nit: fix it if it is small, else outcome `unimportant`.
    - Pre-existing: never fix it in this branch. Outcome `deferred-intent`; step 8 turns it into a new task.
    - A finding you judge wrong or intentional: outcome `wrong` or `intentional` with the reason. For an Important or security finding, the user must agree.
@@ -41,7 +41,7 @@ The agent takes the change up to the merge gate. Who passes that gate depends on
    - `task`: anything this project owns, such as its check command, REVIEW.md, CLAUDE.md or its edits to `.claude/`. Choose its slug now; step 8 creates the task, naming in its Problem section the file to change and the `/sdlc-setup` play that owns it, if any.
    - `dropped`: not worth acting on, with the reason.
 
-   Entries that come up later in this phase, such as the gatekeeper's, go into the approval question in the same way.
+   Entries that come up later in this phase, such as the gatekeeper's, go into the approval question in the same way, with outcome `proposed` until it is answered.
 
    Then write `sdlc/<slug>/deploy.md` from the template, approve it for the task's `gate_mode` (`.claude/rules/sdlc.md`), then commit and push it.
 7. Merge:

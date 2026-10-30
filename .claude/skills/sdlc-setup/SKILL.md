@@ -23,7 +23,7 @@ Rules for every play:
 ## verify: the feedback loop
 
 1. Find how the project is checked today: CLAUDE.md, a Makefile, package.json scripts, the CI config.
-2. Make each check one command that exits non-zero on failure (build, test, lint). If it takes several steps or setup knowledge, propose one target such as `make check` or `npm run check`.
+2. Make each check one command that exits non-zero on failure (build, test, lint). If it takes several steps or setup knowledge, propose one target such as `make check` or `npm run check`. Exclude `sdlc/**` from doc and link checkers: artifacts name paths that do not exist yet or that a task deletes. When a kind of file the project changes (shell scripts, say) has no test harness, offer a minimal one, and add it only after a yes.
 3. Add a "Verifying your work" section to CLAUDE.md:
    - each command, with an example of healthy output;
    - the rule to run all of them and paste the output before calling work done;

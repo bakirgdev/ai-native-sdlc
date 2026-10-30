@@ -142,7 +142,7 @@ Answers get less reliable as the context grows, and current models only auto-com
 
 `/sdlc-deploy` reviews the branch before it pushes, following [how the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/).
 
-- **The change sets the risk tier.** The plan sets `risk: low | medium | high` in task.yaml. Deploy raises it to `high` when the diff touches CI or release workflows, `.claude/`, `CLAUDE.md`, `REVIEW.md` or a path under `## Always human` in REVIEW.md. The tier never goes down.
+- **The change sets the risk tier.** The plan sets `risk: low | medium | high` in task.yaml. Deploy raises it to `high` when the diff touches CI or release workflows, `.claude/`, `CLAUDE.md`, `AGENTS.md` (nested ones too), `REVIEW.md` or a path under `## Always human` in REVIEW.md. The tier never goes down.
 - **Depth follows the tier.** `low`: the `sdlc-reviewer` agent. `medium`: plus `/code-review high` and `/security-review`. `high`: `sdlc-reviewer` on opus, `/code-review max` and `/security-review`. A fresh `sdlc-reviewer` then verifies the Important (including all security) and Pre-existing findings, and only confirmed ones are fixed, test-first.
 - **Severity** is Important, Nit or Pre-existing. Pre-existing bugs are not fixed in the PR; each becomes a new draft intent for `/sdlc-maintain triage`.
 - **At most three rounds.** Later rounds review only the new commits and never repeat a finding. After three, Claude asks you to rethink the approach.
