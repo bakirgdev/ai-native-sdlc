@@ -35,6 +35,8 @@ while [ -n "$d" ] && [ ! -d "$d" ]; do d=${d%/*}; done
 [ -n "$d" ] || exit 0
 repo=$(sdlc_root "$d") || exit 0
 slug=$(sdlc_branch_slug "$repo") || exit 0
+# Ignored files (such as .claude/settings.local.json) never reach a commit.
+git -c core.fsmonitor=false -C "$repo" check-ignore -q -- "$file" && exit 0
 
 status=$(sdlc_field "$SDLC_PROJECT/sdlc/$slug/plan.md" status)
 [ "$status" = accepted ] && exit 0

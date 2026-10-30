@@ -30,7 +30,7 @@ Input: $ARGUMENTS
      - `strict`: the playbook's roles. The named owner sets the status or merges the PR; Claude never approves.
    - **Run mode** (`run_mode`), recommend `manual`:
      - `manual`: each phase ends with a command you run in a new terminal.
-     - `autonomous`: each phase starts the next one as a background session; you are pulled in only for questions and approvals (follow it with `claude agents`).
+     - `autonomous`: each phase starts the next one as a background session in the task's own worktree; you are pulled in only for questions and approvals (follow it with `claude agents`). Background sessions stall on permission prompts nobody sees: when the user picks it, check that the tools the phases call (such as the context7 and Playwright MCP tools) are allowed in the project or user settings, and offer to add the missing allow rules.
    - **Pull request** (`pr`), recommend `ask`: with `ask` Claude asks before pushing, opening and merging; with `auto` it does all three itself.
    - **Repositories** (workspace mode): which repositories the task changes.
    - **Models**: show the output of `.claude/sdlc-scripts/next.sh --defaults` and ask whether any phase of this task should use a different model, effort or permission mode.
